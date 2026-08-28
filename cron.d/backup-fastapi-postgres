@@ -1,0 +1,3 @@
+# Daily pg_dump of fastapi-postgres. Installed at /etc/cron.d/backup-fastapi-postgres.
+# Runs as root so it can docker exec into fastapi-postgres and write to /srv/backups.
+15 3 * * * root /srv/scripts/backup/backup-fastapi-postgres.sh

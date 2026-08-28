@@ -1,0 +1,21 @@
+http:
+  middlewares:
+    # frameDeny used to live here, applied globally via the entrypoint. Response
+    # headers set by entrypoint-level middleware are written last (outermost),
+    # so a router-level override of X-Frame-Options never actually took effect
+    # - it was silently re-clobbered back to DENY. Moved into its own
+    # `frame-deny` middleware below, attached explicitly per-router instead, so
+    # the two sandpack artifact routers can opt out while everything else that
+    # relied on it keeps the exact same protection, just made explicit.
+    secureheaders:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+    frame-deny:
+      headers:
+        frameDeny: true

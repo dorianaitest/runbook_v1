@@ -1,0 +1,193 @@
+x-zeek-bridge: &zeek-bridge
+  image: zeek/zeek:lts
+  restart: unless-stopped
+  network_mode: host
+  cap_add:
+    - NET_RAW
+    - NET_ADMIN
+
+services:
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
+    restart: unless-stopped
+    expose:
+      - "3100"
+    volumes:
+      - loki_data:/loki
+      - ./loki-config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability
+
+  # NOTE: the zeek CLI only accepts a single -i per process ("Only a
+  # single interface option (-i) is allowed"), so container attribution
+  # (specs/zeek-container-attribution.md) needs one container per
+  # interface below instead of multiple -i flags on one process. Each
+  # bridge container writes to its own /home/luca/zeek-logs/<net>
+  # subdirectory to avoid clobbering conn.log/dns.log between processes.
+  # Bridge names are tied to each network's ID and will change if a
+  # network is ever recreated.
+
+  zeek:
+    <<: *zeek-bridge
+    container_name: zeek
+    volumes:
+      - /home/luca/zeek-logs:/logs
+      - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
+      - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
+    working_dir: /logs
+    command: zeek -i ${ZEEK_IFACE:-eth0} -C /opt/zeek/share/zeek/site/local.zeek
+
+  zeek-app-net:
+    <<: *zeek-bridge
+    container_name: zeek-app-net
+    volumes:
+      - /home/luca/zeek-logs/app_net:/logs
+      - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
+      - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
+    working_dir: /logs
+    command: zeek -i br-87f787760713 -C /opt/zeek/share/zeek/site/local.zeek
+
+  zeek-librechat-default:
+    <<: *zeek-bridge
+    container_name: zeek-librechat-default
+    volumes:
+      - /home/luca/zeek-logs/librechat_default:/logs
+      - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
+      - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
+    working_dir: /logs
+    command: zeek -i br-9bd8fc9d113a -C /opt/zeek/share/zeek/site/local.zeek
+
+  zeek-fastapi-default:
+    <<: *zeek-bridge
+    container_name: zeek-fastapi-default
+    volumes:
+      - /home/luca/zeek-logs/fastapi_default:/logs
+      - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
+      - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
+    working_dir: /logs
+    command: zeek -i br-82d9079a41b9 -C /opt/zeek/share/zeek/site/local.zeek
+
+  zeek-code-net:
+    <<: *zeek-bridge
+    container_name: zeek-code-net
+    volumes:
+      - /home/luca/zeek-logs/code_net:/logs
+      - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
+      - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
+    working_dir: /logs
+    command: zeek -i br-9926dcb29151 -C /opt/zeek/share/zeek/site/local.zeek
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      - /home/luca/zeek-logs:/zeek-logs:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - observability
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.4.2
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=https://grafana.demo-ki-instanz.de
+      - GF_SERVER_DOMAIN=grafana.demo-ki-instanz.de
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=in-v3.mailjet.com:587
+      - GF_SMTP_USER=${MAILJET_API_KEY}
+      - GF_SMTP_PASSWORD=${MAILJET_SMTP_SECRET}
+      - GF_SMTP_FROM_ADDRESS=noreply@chat.demo-ki-instanz.de
+      - GF_SMTP_FROM_NAME=Grafana Alerts
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    expose:
+      - "3000"
+    networks:
+      - observability
+      - proxy
+      - app_net
+    depends_on:
+      - loki
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.demo-ki-instanz.de`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.routers.grafana.middlewares=frame-deny@file"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  webhook-test:
+    image: python:3.12-slim
+    container_name: webhook-test
+    restart: unless-stopped
+    expose:
+      - "9999"
+    volumes:
+      - ./webhook-test.py:/webhook-test.py:ro
+    command: python3 /webhook-test.py
+    networks:
+      - observability
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    expose:
+      - "9090"
+    networks:
+      - observability
+    depends_on:
+      - node-exporter
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.textfile.directory=/textfile'
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+      - /home/luca/node-textfile:/textfile:ro
+    expose:
+      - "9100"
+    networks:
+      - observability
+
+networks:
+  observability:
+    name: observability
+  proxy:
+    external: true
+  app_net:
+    external: true
+
+volumes:
+  loki_data:
+  grafana_data:
+  prometheus_data:

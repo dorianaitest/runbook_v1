@@ -1,0 +1,99 @@
+services:
+  api:
+    environment:
+      - LIBRECHAT_CODE_BASEURL=http://code-interpreter-api:8000
+      - LIBRECHAT_CODE_API_KEY=${LIBRECHAT_CODE_API_KEY}
+      - IMAGE_GEN_OAI_API_KEY=${IMAGE_GEN_OAI_API_KEY}
+      - IMAGE_GEN_OAI_BASEURL=http://fastapi-gateway:8001/v1
+      - IMAGE_GEN_OAI_MODEL=gpt-image-2
+      - GOOGLE_SERVICE_KEY_FILE=/app/vertex-sa.json
+      - GOOGLE_CLOUD_LOCATION=europe-west4
+      - GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
+      # Google Image Tool routing durch LiteLLM:
+      - GEMINI_IMAGE_BASEURL=http://litellm:4000/vertex_ai
+      - GEMINI_IMAGE_API_KEY=${IMAGE_GEN_OAI_API_KEY}
+    ports: !reset []
+    networks:
+      - default
+      - proxy
+      - code-net
+      - app_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.librechat.rule=Host(`chat.demo-ki-instanz.de`)"
+      - "traefik.http.routers.librechat.entrypoints=websecure"
+      - "traefik.http.routers.librechat.tls=true"
+      - "traefik.http.routers.librechat.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.services.librechat.loadbalancer.server.port=3080"
+      - "traefik.http.middlewares.librechat-ratelimit.rateLimit.average=30"
+      - "traefik.http.middlewares.librechat-ratelimit.rateLimit.period=1m"
+      - "traefik.http.middlewares.librechat-ratelimit.rateLimit.burst=600"
+      - "traefik.http.routers.librechat.middlewares=librechat-ratelimit,chat-cors@file,strip-cors@file,chat-csp@file,frame-deny@file"
+    volumes:
+      - /srv/apps/librechat/.env:/app/.env
+      - /srv/apps/librechat/images:/app/client/public/images
+      - /srv/apps/librechat/uploads:/app/uploads
+      - /srv/apps/librechat/logs:/app/logs
+      - /srv/apps/librechat/skill:/app/skill
+      - /srv/overrides/librechat/librechat.yaml:/app/librechat.yaml
+      - /srv/overrides/librechat/branding/logo.svg:/app/client/dist/assets/logo.svg
+      - /srv/overrides/librechat/branding/favicon-16x16.png:/app/client/dist/assets/favicon-16x16.png
+      - /srv/overrides/librechat/branding/favicon-32x32.png:/app/client/dist/assets/favicon-32x32.png
+      - /srv/overrides/librechat/branding/apple-touch-icon-180x180.png:/app/client/dist/assets/apple-touch-icon-180x180.png
+      - /srv/overrides/librechat/branding/icon-192x192.png:/app/client/dist/assets/icon-192x192.png
+      - /srv/overrides/librechat/branding/ms-logo.svg:/app/client/dist/assets/ms-logo.svg
+      - /srv/overrides/librechat/branding/maskable-icon.png:/app/client/dist/assets/maskable-icon.png
+      - /srv/overrides/librechat/branding/custom.css:/app/client/dist/assets/custom.css
+      - /srv/overrides/librechat/branding/openai.png:/app/client/dist/assets/openai.png
+      - /srv/overrides/librechat/branding/kimi.svg:/app/client/dist/assets/kimi.svg
+      - /srv/overrides/librechat/branding/auto-logo.jpg:/app/client/dist/assets/auto-logo.jpg
+      - /srv/overrides/librechat/branding/claude.svg:/app/client/dist/assets/claude.svg
+      - /srv/overrides/librechat/branding/gemini.svg:/app/client/dist/assets/gemini.svg
+      - /srv/overrides/librechat/branding/bilder-logo.jpg:/app/client/dist/assets/bilder-logo.jpg
+      - /srv/overrides/librechat/litellm/vertex-sa.json:/app/vertex-sa.json:ro
+      - ./config/invite-fixed.js:/app/config/invite-fixed.js
+      - /srv/overrides/librechat/search.cjs:/app/node_modules/@librechat/agents/dist/cjs/tools/search/search.cjs
+      - /srv/overrides/librechat/search.mjs:/app/node_modules/@librechat/agents/dist/esm/tools/search/search.mjs
+      - ./api/strategies/localStrategy.js:/app/api/strategies/localStrategy.js
+      - /srv/overrides/librechat/manifest.webmanifest:/app/client/dist/manifest.webmanifest
+      - /srv/overrides/librechat/index.html:/app/client/dist/index.html
+      - ./api/server/services/AuthService.js:/app/api/server/services/AuthService.js
+      - /srv/overrides/librechat/api/app/clients/tools/structured/GeminiImageGen.js:/app/api/app/clients/tools/structured/GeminiImageGen.js
+  # Ephemerer Puffer fuer Resumable-LLM-Streams (Fix Streaming-Bug: In-Memory-EventTransport
+  # verliert Deltas an spaet verbindende GET-Subscriber; RedisEventTransport puffert + replayed).
+  # Aktivierung zusaetzlich per .env: USE_REDIS=true + USE_REDIS_STREAMS=true (REDIS_URI steht schon).
+  # Keine Persistenz noetig - Streams sind kurzlebig; LRU-Eviction unter Speicherdruck.
+  redis:
+    image: redis:7-alpine
+    container_name: librechat-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - app_net
+  litellm:
+    image: ghcr.io/berriai/litellm@sha256:7315a3a1573d9ff0ed78068b73260e960486ff62922ee6a78f1a2be0f1e5e249
+    container_name: litellm
+    command:
+      - "--config=/config/litellm-config.yml"
+    env_file: /srv/overrides/librechat/litellm/.env
+    environment:
+      - PYTHONPATH=/config
+      - LANGFUSE_LOG_CONTENT=true
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/vertex-sa.json
+    volumes:
+      - /srv/overrides/librechat/litellm/litellm-config.yml:/config/litellm-config.yml:ro
+      - /srv/overrides/librechat/litellm/auto-router.json:/config/auto-router.json:ro
+      - /srv/overrides/librechat/litellm/custom_langfuse_callback.py:/config/custom_langfuse_callback.py:ro
+      - /srv/overrides/librechat/litellm/vertex-sa.json:/config/vertex-sa.json:ro
+    networks:
+      - default
+      - app_net
+    restart: always
+networks:
+  proxy:
+    external: true
+  app_net:
+    external: true
+  code-net:
+    external: true

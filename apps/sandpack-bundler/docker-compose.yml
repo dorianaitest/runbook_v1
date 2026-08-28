@@ -1,0 +1,28 @@
+services:
+  sandpack-bundler:
+    image: ghcr.io/librechat-ai/codesandbox-client/bundler:latest
+    container_name: sandpack-bundler
+    restart: unless-stopped
+    healthcheck:
+      # Image's own healthcheck resolves "localhost" to IPv6, which nginx
+      # inside the container doesn't listen on - container reports unhealthy
+      # and Traefik drops it from routing. Override targeting 127.0.0.1.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - 'traefik.http.routers.sandpack-bundler.rule=Host(`bundler.artifacts.demo-ki-instanz.de`) || HostRegexp(`^[a-z0-9]+-bundler\.artifacts\.demo-ki-instanz\.de$$`)'
+      - "traefik.http.routers.sandpack-bundler.entrypoints=websecure"
+      - "traefik.http.routers.sandpack-bundler.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.routers.sandpack-bundler.tls.domains[0].main=artifacts.demo-ki-instanz.de"
+      - "traefik.http.routers.sandpack-bundler.tls.domains[0].sans=*.artifacts.demo-ki-instanz.de"
+      - "traefik.http.routers.sandpack-bundler.middlewares=sandpack-csp@file"
+      - "traefik.http.services.sandpack-bundler.loadbalancer.server.port=80"
+
+networks:
+  proxy:
+    external: true

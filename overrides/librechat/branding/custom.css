@@ -1,0 +1,116 @@
+a[href="https://librechat.ai"] {
+  display: none !important;
+}
+
+a[href*="landesportal"] {
+  font-size: 0 !important;
+}
+a[href*="landesportal"]::after {
+  content: "AI-Test";
+  font-size: 0.8rem !important;
+}
+
+/* Verbrauchs-Balken für modelSpec-Beschreibungen (Sanitizer erlaubt nur class,
+   kein style — Gradient + Marker kommen deshalb komplett aus diesem Stylesheet) */
+.usage-track {
+  display: inline-block;
+  position: relative;
+  width: 72px;
+  height: 4px;
+  border-radius: 9999px;
+  vertical-align: middle;
+  background: linear-gradient(90deg, #22c55e, #eab308, #f97316, #ef4444);
+}
+.usage-track::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: var(--usage-pos, 50%);
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--usage-color, #eab308);
+  border: 2px solid #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.35);
+}
+.usage-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+.usage-wrap::before,
+.usage-wrap::after {
+  font-size: 10px;
+  line-height: 1;
+  color: #9ca3af;
+}
+.usage-wrap::before { content: "Low"; }
+.usage-wrap::after { content: "High"; }
+
+/* Zweisprachige Modell-Beschreibungen: LibreChat setzt beim Sprachwechsel
+   document.documentElement.lang (i18n.ts syncDocumentLanguage) —
+   Deutsch bei deutscher UI, Englisch als Fallback für alle anderen */
+.i18n-de { display: none; }
+html[lang^="de"] .i18n-de { display: inline; }
+html[lang^="de"] .i18n-en { display: none; }
+/* Modell-Dropdown kompakt (nur Menü/Suchliste, Startseite unverändert):
+   Zeile 1 = Modellname links + Balken rechts (absolut positioniert),
+   Zeile 2 = Beschreibung einzeilig, bei Überlänge mit … gekürzt. */
+
+/* Eintrags-Container als Anker für den Balken */
+[role="menu"] div:has(> div > span > .usage-desc),
+[role="listbox"] div:has(> div > span > .usage-desc) {
+  position: relative;
+}
+
+/* Balken oben rechts, auf Höhe der Namenszeile */
+[role="menu"] .usage-wrap,
+[role="listbox"] .usage-wrap {
+  position: absolute;
+  top: 7px;
+  right: 4px;
+}
+
+/* Eintrag vertikal kompakter: weniger Innenabstand und engerer
+   Abstand zwischen Namens- und Beschreibungszeile */
+[role="menu"] div:has(> div > span > .usage-desc),
+[role="listbox"] div:has(> div > span > .usage-desc) {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+[role="menu"] div:has(> span > .usage-desc),
+[role="listbox"] div:has(> span > .usage-desc) {
+  gap: 2px;
+}
+
+/* Platz rechts vom Namen freihalten, damit lange Namen nicht unter
+   den Balken laufen */
+[role="menu"] div:has(> span > .usage-desc) > span.truncate,
+[role="listbox"] div:has(> span > .usage-desc) > span.truncate {
+  padding-right: 128px;
+}
+
+/* Beschreibung: eine Zeile, Rest abschneiden, dezent und kompakt */
+[role="menu"] span:has(> .usage-desc),
+[role="listbox"] span:has(> .usage-desc) {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-secondary, #6b7280);
+  font-size: 11px;
+  line-height: 1.25;
+}
+[role="menu"] .usage-desc br,
+[role="listbox"] .usage-desc br {
+  display: none;
+}
+
+.usage-1 { --usage-pos: 10%; --usage-color: #22c55e; }
+.usage-2 { --usage-pos: 30%; --usage-color: #84cc16; }
+.usage-3 { --usage-pos: 50%; --usage-color: #eab308; }
+.usage-4 { --usage-pos: 70%; --usage-color: #f97316; }
+.usage-5 { --usage-pos: 90%; --usage-color: #ef4444; }

@@ -1,0 +1,3 @@
+# Daily mongodump of chat-mongodb (LibreChat DB). Installed at /etc/cron.d/backup-mongo.
+# Runs as root so it can docker exec into chat-mongodb and write to /srv/backups.
+0 3 * * * root /srv/scripts/backup/backup-mongo.sh

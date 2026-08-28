@@ -1,0 +1,68 @@
+{
+  "encoder_type": "openai",
+  "encoder_name": "text-embedding-3-small",
+  "routes": [
+    {
+      "name": "gpt-5.6-terra",
+      "utterances": [
+        "schreibe eine python funktion die eine csv einliest",
+        "warum wirft mein code diesen fehler",
+        "debugge dieses javascript",
+        "erkläre mir diesen stacktrace",
+        "wie schreibe ich eine sql abfrage mit join",
+        "baue mir ein bash script",
+        "refactore diese klasse",
+        "regex für email validierung",
+        "docker compose datei erstellen",
+        "write a function to parse json",
+        "fix this error in my code",
+        "unit test schreiben"
+      ],
+      "description": "Programmierung und Technik",
+      "score_threshold": 0.4,
+      "metadata": {}
+    },
+    {
+      "name": "gpt-5.4",
+      "utterances": [
+        "erstelle ein ausführliches konzept für",
+        "analysiere diese daten im detail und leite empfehlungen ab",
+        "schreibe einen umfassenden bericht über",
+        "vergleiche die optionen und bewerte vor und nachteile",
+        "entwirf eine langfristige strategie",
+        "fasse dieses lange dokument strukturiert zusammen",
+        "erstelle ein detailliertes angebot",
+        "wäge diese komplexe entscheidung mit mehreren faktoren ab",
+        "businessplan erstellen",
+        "erstelle eine pdf datei",
+        "erstelle mir ein dokument als pdf",
+        "mach mir eine html datei daraus",
+        "erstelle eine excel tabelle",
+        "erzeuge einen einseiter als pdf",
+        "was gibt es neues zu diesem thema",
+        "aktuelle nachrichten über",
+        "wie ist der aktuelle stand bei",
+        "was ist diese woche passiert"
+      ],
+      "description": "Komplexe Analysen und Konzepte",
+      "score_threshold": 0.5,
+      "metadata": {}
+    },
+    {
+      "name": "gpt-4.1-mini",
+      "utterances": [
+        "hallo",
+        "guten morgen",
+        "danke dir",
+        "was heißt das auf englisch",
+        "übersetze dieses wort",
+        "ok super",
+        "wie schreibt man das wort richtig",
+        "kurze frage"
+      ],
+      "description": "Smalltalk und triviale Kurzanfragen",
+      "score_threshold": 0.5,
+      "metadata": {}
+    }
+  ]
+}

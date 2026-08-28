@@ -1,0 +1,38 @@
+# ── Secrets ────────────────────────────────────────────────────────────
+**/.env
+**/.env.*
+!**/.env.example
+overrides/librechat/litellm/vertex-sa.json
+
+# ── TLS certificates (Let's Encrypt) ───────────────────────────────────
+infra/traefik/certs/
+
+# ── Upstream repos (have own .git — excluded entirely) ─────────────────
+# Our customisations for these live in overrides/ instead.
+# apps/librechat/ is now a submodule (see .gitmodules) — no longer ignored.
+apps/librechat-admin-panel/
+
+# ── Runtime data ────────────────────────────────────────────────────────
+data/
+shared/
+apps/observability/container-map.tsv
+backups/
+
+# ── Backup files ────────────────────────────────────────────────────────
+*.bak
+*.bak*
+
+# ── OS / Editor ─────────────────────────────────────────────────────────
+.DS_Store
+*.swp
+*~
+apps/observability/*.log
+
+# ── Python ──────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+
+# ── Agent config (local-only, not shipped with repo) ────────────────────
+CLAUDE.md
+AGENTS.md
+docs/agents/

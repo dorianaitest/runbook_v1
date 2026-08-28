@@ -1,0 +1,137 @@
+default_vertex_config:
+  vertex_project: os.environ/GOOGLE_VERTEX_PROJECT
+  vertex_location: europe-west4
+  vertex_credentials: /config/vertex-sa.json
+model_list:
+  - model_name: auto-router
+    litellm_params:
+      model: auto_router/auto_router_1
+      auto_router_config_path: /config/auto-router.json
+      auto_router_default_model: gpt-5.6-luna
+      auto_router_embedding_model: text-embedding-3-small
+  - model_name: gpt-5.6-terra
+    litellm_params:
+      model: openai/gpt-5.6-terra
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+      input_cost_per_token: 0.00000250   
+      output_cost_per_token: 0.000015    
+  - model_name: gpt-5.6-luna
+    litellm_params:
+      model: openai/gpt-5.6-luna
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+      input_cost_per_token: 0.0000010   
+      output_cost_per_token: 0.0000060   
+  - model_name: mistral-medium-3-5
+    litellm_params:
+      model: openai/mistral-medium-3-5
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+      input_cost_per_token: 0.0000015   
+      output_cost_per_token: 0.0000075   
+  - model_name: gpt-5.4
+    litellm_params:
+      model: openai/gpt-5.4
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+  #- model_name: DeepSeek-V3.2
+  #  litellm_params:
+  #    model: openai/DeepSeek-V3.2
+  #    api_base: os.environ/AZURE_AI_GROK_BASE
+  #    api_key: os.environ/AZURE_API_KEY
+  - model_name: Kimi-K2.6
+    litellm_params:
+      model: openai/Kimi-K2.6
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+      input_cost_per_token: 0.0000006
+      output_cost_per_token: 0.0000025
+  - model_name: Mistral-Large-3
+    litellm_params:
+      model: openai/Mistral-Large-3
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+      input_cost_per_token: 0.0000005
+      output_cost_per_token: 0.0000015
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: vertex_ai/gemini-2.5-pro
+      vertex_project: ai-test-502814
+      vertex_location: europe-west4
+      input_cost_per_token: 0.00000125
+      output_cost_per_token: 0.00001
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: vertex_ai/gemini-2.5-flash
+      vertex_project: ai-test-502814
+      vertex_location: europe-west4
+      input_cost_per_token: 0.0000003
+      output_cost_per_token: 0.0000025
+  - model_name: gemini-3.5-flash
+    litellm_params:
+      model: vertex_ai/gemini-3.5-flash
+      # 3.x nur Multi-Region "eu" (kein europe-west*); Fallback: global
+      vertex_project: ai-test-502814
+      vertex_location: eu
+      input_cost_per_token: 0.0000015
+      output_cost_per_token: 0.000009
+  #- model_name: grok-4-1-fast-reasoning
+  #  litellm_params:
+  #    model: openai/grok-4-1-fast-reasoning
+  #    api_base: os.environ/AZURE_AI_GROK_BASE
+  #    api_key: os.environ/AZURE_API_KEY
+  - model_name: gpt-4.1-mini
+    litellm_params:
+      model: openai/gpt-4.1-mini
+      api_base: os.environ/AZURE_API_BASE
+      api_key: os.environ/AZURE_API_KEY
+  - model_name: gpt-5-nano
+    litellm_params:
+      model: openai/gpt-5-nano
+      api_base: os.environ/AZURE_API_BASE
+      api_key: os.environ/AZURE_API_KEY
+
+
+  #- model_name: grok-4-20-non-reasoning
+  #  litellm_params:
+  #    model: xai/grok-4-20-non-reasoning
+  #    api_base: os.environ/AZURE_AI_GROK_BASE
+  #    api_key: os.environ/AZURE_API_KEY
+
+  - model_name: text-embedding-3-large
+    litellm_params:
+      model: openai/text-embedding-3-large
+      api_base: os.environ/AZURE_API_BASE
+      api_key: os.environ/AZURE_API_KEY
+
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: openai/text-embedding-3-small
+      api_base: os.environ/AZURE_API_BASE
+      api_key: os.environ/AZURE_API_KEY
+
+  - model_name: gpt-image-2
+    litellm_params:
+      model: openai/gpt-image-2
+      api_base: os.environ/AZURE_AI_GROK_BASE
+      api_key: os.environ/AZURE_API_KEY
+      # Listenpreise 19.07.: Text-In 5 / Bild-In 8 / Bild-Out 30 USD/Mio Token.
+      # Input konservativ auf Bild-In-Satz; LiteLLM-Builtin (5/10) unterbucht Output 3x.
+      input_cost_per_token: 0.000008
+      output_cost_per_token: 0.00003
+    model_info:
+      mode: image_generation
+
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: eu.anthropic.claude-sonnet-4-6
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: eu.anthropic.claude-haiku-4-5-20251001-v1:0
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-opus-4-6-v1
+litellm_settings:
+  drop_params: true
+  callbacks: custom_langfuse_callback.proxy_handler_instance

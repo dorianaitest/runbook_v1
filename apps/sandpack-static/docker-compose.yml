@@ -1,0 +1,30 @@
+services:
+  sandpack-static:
+    # Built straight from upstream via Docker's git build context - no
+    # vendored source needed. This is the component attempt 1 never built:
+    # HTML-artifact previews are served by this static server, not the
+    # runtime bundler image.
+    build:
+      context: https://github.com/codesandbox/static-browser-server.git#main
+    container_name: sandpack-static
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - 'traefik.http.routers.sandpack-static.rule=Host(`static.artifacts.demo-ki-instanz.de`) || HostRegexp(`^[a-z0-9]+-static\.artifacts\.demo-ki-instanz\.de$$`)'
+      - "traefik.http.routers.sandpack-static.entrypoints=websecure"
+      - "traefik.http.routers.sandpack-static.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.routers.sandpack-static.tls.domains[0].main=artifacts.demo-ki-instanz.de"
+      - "traefik.http.routers.sandpack-static.tls.domains[0].sans=*.artifacts.demo-ki-instanz.de"
+      - "traefik.http.routers.sandpack-static.middlewares=sandpack-csp@file"
+      - "traefik.http.services.sandpack-static.loadbalancer.server.port=80"
+
+networks:
+  proxy:
+    external: true

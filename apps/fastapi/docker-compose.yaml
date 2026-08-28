@@ -1,0 +1,70 @@
+# Usage:
+#   bash -c 'set -a && source /srv/apps/fastapi/.env && set +a && source /srv/load-secrets.sh && docker compose -f /srv/apps/fastapi/docker-compose.yaml up -d'
+#
+# load-secrets.sh authenticates to Azure Key Vault and exports all secrets as
+# environment variables. FastAPI fetches its own secrets directly via vault.py
+# at startup. The postgres container receives its password from the shell env.
+#
+# Prerequisites: the 4 bootstrap credentials must be present in .env:
+#   AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_KEY_VAULT_URL
+
+services:
+  fastapi:
+    build: .
+    container_name: fastapi-gateway
+    restart: always
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      AZURE_KEY_VAULT_URL: ${AZURE_KEY_VAULT_URL}
+    expose:
+      - "8001"
+    networks:
+      - default
+      - proxy
+      - librechat_default
+      - app_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.fastapi.rule=Host(`api.demo-ki-instanz.de`)"
+      - "traefik.http.routers.fastapi.entrypoints=websecure"
+      - "traefik.http.routers.fastapi.tls=true"
+      - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.routers.fastapi.middlewares=frame-deny@file"
+      - "traefik.http.services.fastapi.loadbalancer.server.port=8001"
+
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg15
+    container_name: fastapi-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: fastapi
+      POSTGRES_DB: fastapi
+      POSTGRES_PASSWORD: ${FASTAPI_POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fastapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+
+networks:
+  proxy:
+    external: true
+  librechat_default:
+    external: true
+  app_net:
+    external: true
+
+volumes:
+  postgres_data:

@@ -1,0 +1,83 @@
+{
+  "title": "Zeek Network Overview",
+  "uid": "zeek-network-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": { "from": "now-15m", "to": "now" },
+  "timezone": "browser",
+  "tags": ["observability", "zeek"],
+  "annotations": { "list": [] },
+  "links": [],
+  "templating": {
+    "list": [
+      {
+        "name": "container_name",
+        "label": "Container",
+        "type": "custom",
+        "query": "All : .*,LibreChat : LibreChat,rag_api : rag_api,fastapi-gateway : fastapi-gateway,litellm : litellm,n8n : n8n",
+        "current": { "text": "All", "value": ".*" },
+        "includeAll": false,
+        "multi": false,
+        "hide": 0
+      }
+    ]
+  },
+  "timepicker": {},
+  "panels": [
+    {
+      "id": 1,
+      "title": "Zeek Egress Connections by Container",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum by (container_name) (count_over_time({job=\"zeek\", log_type=\"conn\"} | json | container_name != \"\" [$__interval]))",
+          "legendFormat": "{{container_name}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Zeek Logs (filtered by container)",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{job=\"zeek\"} | json | container_name =~ \"$container_name\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "maxLines": 200,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      }
+    }
+  ]
+}

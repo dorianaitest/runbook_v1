@@ -1,0 +1,53 @@
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/certs
+      - ./dynamic:/dynamic:ro
+    env_file: ./.env
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.middlewares=secureheaders@file"
+      - "--providers.file.directory=/dynamic"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=dorianaitest@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt-dns.acme.email=dorianaitest@gmail.com"
+      - "--certificatesresolvers.letsencrypt-dns.acme.storage=/certs/acme-dns.json"
+      - "--certificatesresolvers.letsencrypt-dns.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt-dns.acme.dnschallenge.provider=hetzner"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.docker.local`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth,frame-deny@file"
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$05$$phKs35X.FS5tqc7NCr2uzO.AFmBf6N4Y.FYR.h0QRW5Oz3his9L.a"
+
+networks:
+  proxy:
+    name: proxy

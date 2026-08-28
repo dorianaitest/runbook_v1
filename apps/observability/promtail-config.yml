@@ -1,0 +1,100 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'service'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
+      # Default category — overridden by specific rules below
+      - source_labels: ['service']
+        regex: '.*'
+        target_label: 'log_category'
+        replacement: 'internal'
+      - source_labels: ['service']
+        regex: 'fastapi-gateway|litellm'
+        target_label: 'log_category'
+        replacement: 'app_error'
+      - source_labels: ['service']
+        regex: 'n8n'
+        target_label: 'log_category'
+        replacement: 'n8n'
+      - source_labels: ['service']
+        regex: 'LibreChat|rag_api'
+        target_label: 'log_category'
+        replacement: 'session'
+      - source_labels: ['service']
+        regex: 'traefik'
+        target_label: 'log_category'
+        replacement: 'access'
+      - source_labels: ['service']
+        regex: 'chat-mongodb|fastapi-postgres|postgres|vectordb|chat-meilisearch'
+        target_label: 'log_category'
+        replacement: 'database'
+    pipeline_stages:
+      # LibreChat: drop lines that contain email addresses (login logs include Username: email)
+      - match:
+          selector: '{service="LibreChat"}'
+          stages:
+            - replace:
+                expression: '([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})'
+                replace: '***'
+      # LibreChat: drop lines that look like chat message content
+      - match:
+          selector: '{service="LibreChat"}'
+          stages:
+            - drop:
+                expression: '"(message|content|text)":\s*"[^"]{30,}'
+      # n8n: drop lines that contain workflow data payloads
+      - match:
+          selector: '{service="n8n"}'
+          stages:
+            - drop:
+                expression: '"(body|data|message|payload)":\s*[\[{"]'
+
+  - job_name: zeek_dns
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: zeek
+          log_type: dns
+          __path__: /zeek-logs/dns*.log
+      # Bridge-capture containers (container attribution) each log into
+      # their own /zeek-logs/<net>/ subdirectory — see
+      # specs/zeek-container-attribution.md.
+      - targets: [localhost]
+        labels:
+          job: zeek
+          log_type: dns
+          __path__: /zeek-logs/*/dns*.log
+    pipeline_stages:
+      - labeldrop:
+          - filename
+  - job_name: zeek_conn
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: zeek
+          log_type: conn
+          __path__: /zeek-logs/conn*.log
+      - targets: [localhost]
+        labels:
+          job: zeek
+          log_type: conn
+          __path__: /zeek-logs/*/conn*.log
+    pipeline_stages:
+      - labeldrop:
+          - filename

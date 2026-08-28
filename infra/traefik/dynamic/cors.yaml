@@ -1,0 +1,34 @@
+http:
+  middlewares:
+    chat-csp:
+      headers:
+        customResponseHeaders:
+          # Self-hosted bundler+static server verified working end-to-end
+          # (real React + HTML artifact preview, 2026-07-15) - CodeSandbox.io
+          # dropped from frame-src, only the self-hosted origin remains.
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'sha256-ApRfxd0rLedfnw6ZDBJ3VtMvEqlMCVS8OkY8rahs7+Q=' 'sha256-cl5sIiTSRlmHaX3W7VbmqBtTTi58O/zGzGoT7g5Z7as=' https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/; img-src 'self' blob: data: https:; frame-src 'self' blob: https://*.artifacts.demo-ki-instanz.de https://lucanoerebgmail.sharepoint.com https://lucanoerebgmail-my.sharepoint.com; font-src 'self' data: https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/; connect-src 'self' https://graph.microsoft.com https://lucanoerebgmail.sharepoint.com https://lucanoerebgmail-my.sharepoint.com; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+    sandpack-csp:
+      headers:
+        customResponseHeaders:
+          Content-Security-Policy: "frame-ancestors https://chat.demo-ki-instanz.de"
+    chat-cors:
+      headers:
+        accessControlAllowOriginList:
+          - "https://chat.demo-ki-instanz.de"
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+        accessControlAllowCredentials: true
+        addVaryHeader: true
+    strip-cors:
+      headers:
+        customResponseHeaders:
+          Access-Control-Allow-Origin: ""
+          Access-Control-Allow-Credentials: ""

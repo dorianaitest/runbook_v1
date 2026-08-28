@@ -1,0 +1,8 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+httpx==0.27.2
+asyncpg==0.30.0
+pydantic-ai-slim[openai]
+structlog==24.4.0
+azure-identity
+azure-keyvault-secrets

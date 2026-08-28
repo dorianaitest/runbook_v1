@@ -1,0 +1,21 @@
+  services:
+    admin-panel:
+      ports: !reset []
+      networks:
+        - default
+        - proxy
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=proxy"
+        - 'traefik.http.routers.admin-panel.rule=Host(`admin-chat.demo-ki-instanz.de`)'
+        - "traefik.http.routers.admin-panel.entrypoints=websecure"
+        - "traefik.http.routers.admin-panel.tls=true"
+        - "traefik.http.routers.admin-panel.tls.certresolver=letsencrypt"
+        - "traefik.http.services.admin-panel.loadbalancer.server.port=3001"
+        - "traefik.http.middlewares.admin-ratelimit.rateLimit.average=15"
+        - "traefik.http.middlewares.admin-ratelimit.rateLimit.burst=20"
+        - "traefik.http.middlewares.admin-ratelimit.rateLimit.period=1m"
+        - "traefik.http.routers.admin-panel.middlewares=admin-ratelimit"
+  networks:
+    proxy:
+      external: true

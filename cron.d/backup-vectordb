@@ -1,0 +1,3 @@
+# Daily pg_dump of vectordb. Installed at /etc/cron.d/backup-vectordb.
+# Runs as root so it can docker exec into vectordb and write to /srv/backups.
+45 3 * * * root /srv/scripts/backup/backup-vectordb.sh

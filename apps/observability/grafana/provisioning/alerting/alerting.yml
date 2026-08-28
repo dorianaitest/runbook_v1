@@ -1,0 +1,76 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: test-webhook
+    receivers:
+      - uid: test-webhook-uid
+        type: webhook
+        settings:
+          url: http://webhook-test:9999/alert
+          httpMethod: POST
+
+policies:
+  - orgId: 1
+    receiver: test-webhook
+
+groups:
+  - orgId: 1
+    name: observability-alerts
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: 5xx-high-rate
+        title: "High 5xx Error Rate"
+        condition: C
+        data:
+          - refId: A
+            queryType: range
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: 'sum(count_over_time({log_category="access"} |~ " 5[0-9]{2} " [5m]))'
+              queryType: range
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: sum
+              refId: B
+              settings:
+                mode: dropNN
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [5]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [B]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "High 5xx error rate"
+          description: "More than 5 five-xx errors in the last 5 minutes"
+        labels: {}

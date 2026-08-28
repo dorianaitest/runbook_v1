@@ -1,0 +1,6 @@
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Daily dump of the shared postgres container (appdb, litellm, n8n) + n8n key/binary-data
+# backup. See specs/backup-postgres-shared.md. Staggered after the sibling backup-mongo
+# (03:00) / backup-fastapi-postgres (03:15) jobs.
+30 3 * * * root /srv/scripts/backup/backup-postgres-shared.sh

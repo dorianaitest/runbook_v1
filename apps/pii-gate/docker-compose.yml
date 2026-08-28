@@ -1,0 +1,21 @@
+services:
+  pii-gate:
+    build: .
+    container_name: pii-gate
+    restart: unless-stopped
+    environment:
+      - PII_GATE_DEBUG_LOG=${PII_GATE_DEBUG_LOG:-false}
+    networks:
+      - app_net
+    # KEIN ports:-Block — nur intern erreichbar!
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request as u; u.urlopen('http://localhost:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+networks:
+  app_net:
+    external: true
