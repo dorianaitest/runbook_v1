@@ -1,4 +1,4 @@
 [submodule "apps/librechat"]
 	path = apps/librechat
-	url = https://github.com/dorianaitest/LibreChat.git
+	url = git@github.com:dorianaitest/LibreChat.git
 	branch = hetzner-ai-mvp-patches
