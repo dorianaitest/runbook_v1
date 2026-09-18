@@ -22,6 +22,7 @@ az login \
     --tenant   "$AZURE_TENANT_ID" \
     --username "$AZURE_CLIENT_ID" \
     --password "$AZURE_CLIENT_SECRET" \
+    --allow-no-subscriptions \
     --output none 2>/dev/null
 
 fetch() {
