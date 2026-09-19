@@ -111,6 +111,14 @@ services:
       - default
       - app_net
     restart: always
+  # RAG embeddings routed through LiteLLM (text-embedding-3-small). Key comes
+  # from load-secrets.sh (vault) via interpolation — no secret on disk.
+  rag_api:
+    environment:
+      - EMBEDDINGS_PROVIDER=openai
+      - EMBEDDINGS_MODEL=text-embedding-3-small
+      - RAG_OPENAI_BASEURL=http://litellm:4000/v1
+      - RAG_OPENAI_API_KEY=${LITELLM_MASTER_KEY:?}
 networks:
   proxy:
     external: true
