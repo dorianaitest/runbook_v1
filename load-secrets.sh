@@ -48,6 +48,10 @@ export AZURE_API_KEY=$(fetch AZURE-OPENAI-API-KEY)
 export LANGFUSE_PUBLIC_KEY=$(fetch LANGFUSE-PUBLIC-KEY)
 export LANGFUSE_SECRET_KEY=$(fetch LANGFUSE-SECRET-KEY)
 
+# ── AWS Bedrock (Claude via LiteLLM) ─────────────────────────────────────────
+export AWS_ACCESS_KEY_ID=$(fetch AWS-ACCESS-KEY-ID)
+export AWS_SECRET_ACCESS_KEY=$(fetch AWS-SECRET-ACCESS-KEY)
+
 # ── FastAPI ───────────────────────────────────────────────────────────────────
 export AGENT_API_KEY=$(fetch AGENT-API-KEY)
 
