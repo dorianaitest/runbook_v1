@@ -1,5 +1,12 @@
 services:
   api:
+    # Daemon runs with userns-remap (Teil 2.6). This container runs as
+    # ${UID}:${GID} → remapped to host 100000+UID, so it cannot read the
+    # bind-mounted secrets (.env root:deploy 640, vertex-sa.json). Run in the
+    # host user namespace so standard root:deploy/640 perms apply and the
+    # vertex-sa.json shared with litellm resolves. Data-tier containers
+    # (mongo/meili/rag/vectordb/redis) stay remapped/isolated.
+    userns_mode: "host"
     environment:
       - LIBRECHAT_CODE_BASEURL=http://code-interpreter-api:8000
       - LIBRECHAT_CODE_API_KEY=${LIBRECHAT_CODE_API_KEY}
@@ -74,13 +81,27 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm@sha256:7315a3a1573d9ff0ed78068b73260e960486ff62922ee6a78f1a2be0f1e5e249
     container_name: litellm
+    # Host user namespace: reads bind-mounted vertex-sa.json (shared with api,
+    # see api service). Under userns-remap the shared file can't satisfy both
+    # containers' remapped uids. See Teil 2.6 / api service comment.
+    userns_mode: "host"
     command:
       - "--config=/config/litellm-config.yml"
+    # Non-secret endpoints/config live in litellm/.env (on disk, no secrets).
+    # Secrets come from load-secrets.sh (Azure Key Vault) via shell env and are
+    # interpolated below — no secrets on disk (same model as infra/postgres).
     env_file: /srv/overrides/librechat/litellm/.env
     environment:
       - PYTHONPATH=/config
-      - LANGFUSE_LOG_CONTENT=true
+      # LANGFUSE_LOG_CONTENT: leak prompt content to Langfuse. Default OFF;
+      # flip to true only for a targeted PII test, then set back to false.
+      - LANGFUSE_LOG_CONTENT=false
       - GOOGLE_APPLICATION_CREDENTIALS=/config/vertex-sa.json
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:?}
+      - DATABASE_URL=${LITELLM_DATABASE_URL:?}
+      - AZURE_API_KEY=${AZURE_API_KEY:?}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:?}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:?}
     volumes:
       - /srv/overrides/librechat/litellm/litellm-config.yml:/config/litellm-config.yml:ro
       - /srv/overrides/librechat/litellm/auto-router.json:/config/auto-router.json:ro
