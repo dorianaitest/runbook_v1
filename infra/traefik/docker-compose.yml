@@ -3,6 +3,11 @@ services:
     image: traefik:v3.7
     container_name: traefik
     restart: unless-stopped
+    # Daemon runs with userns-remap (see Teil 2.6): a remapped container root
+    # (host uid 100000) cannot read /var/run/docker.sock (root:docker), so the
+    # docker provider fails with "permission denied". Run Traefik in the host
+    # user namespace so its root == host root and can read the socket.
+    userns_mode: "host"
     security_opt:
       - no-new-privileges:true
     networks:
