@@ -37,10 +37,13 @@ fetch() {
 export POSTGRES_PASSWORD=$(fetch POSTGRES-SUPERUSER-PASSWORD)
 export FASTAPI_POSTGRES_PASSWORD=$(fetch FASTAPI-POSTGRES-PASSWORD)
 export FASTAPI_DATABASE_URL=$(fetch FASTAPI-DATABASE-URL)
+# Per-DB users on the shared postgres (created by infra/postgres/init/*.sh)
+export APPDB_PASSWORD=$(fetch APPDB-PASSWORD)
 
 # ── LiteLLM / Azure OpenAI ───────────────────────────────────────────────────
 export LITELLM_MASTER_KEY=$(fetch LITELLM-MASTER-KEY)
 export LITELLM_DATABASE_URL=$(fetch LITELLM-DATABASE-URL)
+export LITELLM_POSTGRES_PASSWORD=$(fetch LITELLM-POSTGRES-PASSWORD)
 export AZURE_API_KEY=$(fetch AZURE-OPENAI-API-KEY)
 export LANGFUSE_PUBLIC_KEY=$(fetch LANGFUSE-PUBLIC-KEY)
 export LANGFUSE_SECRET_KEY=$(fetch LANGFUSE-SECRET-KEY)

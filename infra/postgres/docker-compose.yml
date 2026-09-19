@@ -3,7 +3,19 @@ services:
     image: pgvector/pgvector:pg17
     container_name: postgres
     restart: unless-stopped
-    env_file: .env
+    # Passwords come from load-secrets.sh (Azure Key Vault) via shell env,
+    # interpolated below — no secrets on disk. Deploy with:
+    #   bash -c 'set -a && source .env && set +a \
+    #     && source /srv/runbook_v1/load-secrets.sh && docker compose up -d'
+    # (.env here holds only the 4 Azure bootstrap creds for load-secrets.sh.)
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      # Consumed only by init/01-create-databases.sh on first init:
+      LITELLM_POSTGRES_PASSWORD: ${LITELLM_POSTGRES_PASSWORD:?}
+      N8N_POSTGRES_PASSWORD: ${N8N_POSTGRES_PASSWORD:?}
+      APPDB_PASSWORD: ${APPDB_PASSWORD:?}
     volumes:
       - /srv/data/postgres:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d

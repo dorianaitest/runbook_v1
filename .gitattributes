@@ -1,0 +1,6 @@
+# Force LF for shell/SQL/config so scripts don't break on the Linux server
+# when committed from a Windows clone with core.autocrlf=true.
+*.sh   text eol=lf
+*.sql  text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
