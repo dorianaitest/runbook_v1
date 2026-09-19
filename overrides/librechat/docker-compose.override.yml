@@ -64,7 +64,15 @@ services:
       - /srv/overrides/librechat/search.mjs:/app/node_modules/@librechat/agents/dist/esm/tools/search/search.mjs
       - ./api/strategies/localStrategy.js:/app/api/strategies/localStrategy.js
       - /srv/overrides/librechat/manifest.webmanifest:/app/client/dist/manifest.webmanifest
-      - /srv/overrides/librechat/index.html:/app/client/dist/index.html
+      # index.html NICHT mounten: die Datei verdrahtet ~30 Asset-Chunk-Hashes
+      # (main + modulepreload + css), die bei jedem dev:latest-Build anders sind
+      # → gemountete alte index.html referenziert 404-Chunks → weisse Seite.
+      # Das Image liefert seine eigene, immer passende index.html. Branding-Titel
+      # via APP_TITLE (.env); Favicons greifen weiter (gleiche Dateinamen gemountet).
+      # Preis: custom.css wird nicht verlinkt (Default-Farben) + 2 CSP-Inline-Hashes
+      # passen nicht mehr (nicht fatal). Wer index.html mounten will, muss bei JEDEM
+      # Image-Update index.html neu ziehen UND die 2 CSP-sha256 neu berechnen.
+      # - /srv/overrides/librechat/index.html:/app/client/dist/index.html
       - ./api/server/services/AuthService.js:/app/api/server/services/AuthService.js
       - /srv/overrides/librechat/api/app/clients/tools/structured/GeminiImageGen.js:/app/api/app/clients/tools/structured/GeminiImageGen.js
   # Ephemerer Puffer fuer Resumable-LLM-Streams (Fix Streaming-Bug: In-Memory-EventTransport
