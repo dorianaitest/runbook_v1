@@ -23,6 +23,15 @@ services:
       # Google Image Tool routing durch LiteLLM:
       - GEMINI_IMAGE_BASEURL=http://litellm:4000/vertex_ai
       - GEMINI_IMAGE_API_KEY=sk-librechat-admin
+      # Web search via pii-gate scrub proxy (Teil 8): keys from vault
+      # (load-secrets.sh), the *_API_URL send Serper/Firecrawl traffic through
+      # pii-gate so the query is PII-scrubbed before it leaves to the non-EU
+      # provider. search.cjs reads SERPER_API_URL; librechat.yaml webSearch reads
+      # the rest. allowedAddresses (librechat.yaml) whitelists pii-gate:8000.
+      - SERPER_API_KEY=${SERPER_API_KEY:?}
+      - SERPER_API_URL=http://pii-gate:8000/serper
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:?}
+      - FIRECRAWL_API_URL=http://pii-gate:8000/firecrawl
     ports: !reset []
     networks:
       - default

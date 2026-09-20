@@ -59,6 +59,13 @@ export AGENT_API_KEY=$(fetch AGENT-API-KEY)
 export N8N_POSTGRES_PASSWORD=$(fetch N8N-POSTGRES-PASSWORD)
 export N8N_ENCRYPTION_KEY=$(fetch N8N-ENCRYPTION-KEY)
 
+# ── Web search (through pii-gate scrub proxy, Teil 8) ────────────────────────
+# Query text is PII-scrubbed by pii-gate before it reaches these non-EU
+# providers; the *_API_URL that points LibreChat at pii-gate is non-secret and
+# lives in the compose environment block, not here.
+export SERPER_API_KEY=$(fetch SERPER-API-KEY)
+export FIRECRAWL_API_KEY=$(fetch FIRECRAWL-API-KEY)
+
 # ── Observability ─────────────────────────────────────────────────────────────
 export GRAFANA_ADMIN_PASSWORD=$(fetch GRAFANA-ADMIN-PASSWORD)
 
