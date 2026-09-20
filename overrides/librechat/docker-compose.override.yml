@@ -7,6 +7,10 @@ services:
     # vertex-sa.json shared with litellm resolves. Data-tier containers
     # (mongo/meili/rag/vectordb/redis) stay remapped/isolated.
     userns_mode: "host"
+    # Auf aktuellen Digest gepinnt (Teil 6.x/custom.css): friert die index.html-Chunk-Hashes
+    # ein, damit der gemountete index.html gueltig bleibt. Update = bewusst pullen +
+    # index.html neu ziehen/patchen (s. custom.css-Einbindung).
+    image: registry.librechat.ai/danny-avila/librechat-dev@sha256:c3664a7d30b510332c1fdc2d5c942498b6a5bc8b710c71e64bb472a720b430ef
     environment:
       - LIBRECHAT_CODE_BASEURL=http://code-interpreter-api:8000
       - LIBRECHAT_CODE_API_KEY=${LIBRECHAT_CODE_API_KEY}
@@ -64,15 +68,14 @@ services:
       - /srv/overrides/librechat/search.mjs:/app/node_modules/@librechat/agents/dist/esm/tools/search/search.mjs
       - ./api/strategies/localStrategy.js:/app/api/strategies/localStrategy.js
       - /srv/overrides/librechat/manifest.webmanifest:/app/client/dist/manifest.webmanifest
-      # index.html NICHT mounten: die Datei verdrahtet ~30 Asset-Chunk-Hashes
-      # (main + modulepreload + css), die bei jedem dev:latest-Build anders sind
-      # → gemountete alte index.html referenziert 404-Chunks → weisse Seite.
-      # Das Image liefert seine eigene, immer passende index.html. Branding-Titel
-      # via APP_TITLE (.env); Favicons greifen weiter (gleiche Dateinamen gemountet).
-      # Preis: custom.css wird nicht verlinkt (Default-Farben) + 2 CSP-Inline-Hashes
-      # passen nicht mehr (nicht fatal). Wer index.html mounten will, muss bei JEDEM
-      # Image-Update index.html neu ziehen UND die 2 CSP-sha256 neu berechnen.
-      # - /srv/overrides/librechat/index.html:/app/client/dist/index.html
+      # index.html gemountet, um custom.css einzubinden (Verbrauchsbalken + DE/EN-Toggle
+      # + Branding-Farben). Voraussetzung: image oben ist auf Digest GEPINNT, sonst
+      # verdrahtet diese Datei ~30 Chunk-Hashes, die bei neuem dev:latest-Build brechen
+      # (404-Chunks → weisse Seite). Diese index.html = Kopie der Image-eigenen (Digest
+      # c3664a7d) + zusaetzlicher <link rel=stylesheet custom.css> vor </head>; Inline-
+      # Scripts unveraendert → bestehende CSP bleibt gueltig. Bei bewusstem Image-Update:
+      # index.html neu aus dem Image ziehen, custom.css-<link> wieder einfuegen.
+      - /srv/overrides/librechat/index.html:/app/client/dist/index.html
       - ./api/server/services/AuthService.js:/app/api/server/services/AuthService.js
       - /srv/overrides/librechat/api/app/clients/tools/structured/GeminiImageGen.js:/app/api/app/clients/tools/structured/GeminiImageGen.js
   # Ephemerer Puffer fuer Resumable-LLM-Streams (Fix Streaming-Bug: In-Memory-EventTransport

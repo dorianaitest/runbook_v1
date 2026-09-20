@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta
       name="description"
-      content="AI-Test"
+      content="LibreChat - An open source chat application with support for multiple AI models"
     />
-    <title>AI-Test</title>
+    <title>LibreChat</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon-180x180.png" />
@@ -32,15 +32,35 @@
       const loadingContainerStyle = document.createElement('style');
       let backgroundColor;
 
-      if (theme === 'dark') {
+      if (theme === 'high-contrast-dark') {
+        backgroundColor = '#000000';
+      } else if (theme === 'high-contrast-light') {
+        backgroundColor = '#ffffff';
+      } else if (theme === 'dark') {
         backgroundColor = '#0d0d0d';
       } else if (theme === 'light') {
         backgroundColor = '#ffffff';
-      } else if (theme === 'system') {
-        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        backgroundColor = prefersDarkScheme ? '#0d0d0d' : '#ffffff';
       } else {
-        backgroundColor = '#ffffff';
+        /* `system`, and anything unset or unrecognised, which ThemeProvider also
+         * resolves as `system`. The OS decides the scheme and the contrast, and
+         * a contrast request moves the dark canvas to pure black, so keying off
+         * the scheme alone would flash #0d0d0d behind the black palette.
+         * The three contrast queries mirror ThemeProvider's `CONTRAST_QUERIES`:
+         * a Windows Contrast Theme reports `forced-colors: active` with
+         * `prefers-contrast: custom`, never `more`. */
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersMoreContrast = [
+          '(prefers-contrast: more)',
+          '(prefers-contrast: custom)',
+          '(forced-colors: active)',
+        ].some(function (query) {
+          return window.matchMedia(query).matches;
+        });
+        backgroundColor = prefersDarkScheme
+          ? prefersMoreContrast
+            ? '#000000'
+            : '#0d0d0d'
+          : '#ffffff';
       }
 
       loadingContainerStyle.innerHTML = `
@@ -83,6 +103,20 @@
               }
               safeAttributes[key] = value;
             });
+            /* Stamp before persistence: a recovery reload may precede the RUM module. */
+            safeAttributes.clientBuildId = 'unknown';
+            var entryScripts = document.querySelectorAll('script[type="module"][src]');
+            for (var i = 0; i < entryScripts.length; i++) {
+              var filename = entryScripts[i]
+                .getAttribute('src')
+                .split(/[?#]/, 1)[0]
+                .split('/')
+                .pop();
+              if (/^index[.-][\w-]+\.js$/.test(filename)) {
+                safeAttributes.clientBuildId = filename;
+                break;
+              }
+            }
             if (window.__lcRumQueue.length >= MAX_RUM_QUEUE) {
               window.__lcRumQueue.shift();
             }
@@ -188,40 +222,45 @@
         });
       })();
     </script>
-    <script type="module" crossorigin src="./assets/index.n3kZ-bvQ.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime.Cyuzqnbw.js">
-    <link rel="modulepreload" crossorigin href="./assets/codemirror-core.DCeggAsc.js">
-    <link rel="modulepreload" crossorigin href="./assets/http-client.Bnu7plte.js">
-    <link rel="modulepreload" crossorigin href="./assets/mermaid.BnhxvkYc.js">
-    <link rel="modulepreload" crossorigin href="./assets/advanced-inputs.BKUrQSBb.js">
-    <link rel="modulepreload" crossorigin href="./assets/animations.Cg77P7xO.js">
-    <link rel="modulepreload" crossorigin href="./assets/react-vtree.Bv__m2K7.js">
-    <link rel="modulepreload" crossorigin href="./assets/query-devtools.CnpBJy7z.js">
-    <link rel="modulepreload" crossorigin href="./assets/validation.DV1yC6np.js">
-    <link rel="modulepreload" crossorigin href="./assets/vendor.CY3XzlPO.js">
-    <link rel="modulepreload" crossorigin href="./assets/avatars.CH7OGiPh.js">
-    <link rel="modulepreload" crossorigin href="./assets/headlessui.DZbMBPHX.js">
-    <link rel="modulepreload" crossorigin href="./assets/radix-ui.BzsJkGse.js">
-    <link rel="modulepreload" crossorigin href="./assets/react-interactions.BaVXC-7v.js">
-    <link rel="modulepreload" crossorigin href="./assets/tanstack-vendor.CMFTiq2K.js">
-    <link rel="modulepreload" crossorigin href="./assets/markdown-processing.Bb4Z4qHS.js">
-    <link rel="modulepreload" crossorigin href="./assets/date-utils.7tLVf9uC.js">
-    <link rel="modulepreload" crossorigin href="./assets/framer-motion.CMPOPEls.js">
-    <link rel="modulepreload" crossorigin href="./assets/i18n.D3Gbp8tn.js">
-    <link rel="modulepreload" crossorigin href="./assets/utilities.j1uNcxJc.js">
-    <link rel="modulepreload" crossorigin href="./assets/forms.BEEooEiq.js">
-    <link rel="modulepreload" crossorigin href="./assets/routing.DTNtzHpp.js">
-    <link rel="modulepreload" crossorigin href="./assets/virtualization.D1H-wHye.js">
-    <link rel="modulepreload" crossorigin href="./assets/hooks.BihSxaC0.js">
-    <link rel="modulepreload" crossorigin href="./assets/MyFilesModal.Bl1ua0zh.js">
-    <link rel="modulepreload" crossorigin href="./assets/security-ui.BjsCPful.js">
-    <link rel="modulepreload" crossorigin href="./assets/ProjectCreateDialog.qJT6vgfz.js">
-    <link rel="modulepreload" crossorigin href="./assets/forms.CmbBBf31.js">
-    <link rel="modulepreload" crossorigin href="./assets/polyfills.BnDHDYRr.js">
-    <link rel="modulepreload" crossorigin href="./assets/math-katex.BMlcaHSk.js">
+    <script type="module" crossorigin src="./assets/index.BjSHf3dG.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime.B0Z9INg1.js">
+    <link rel="modulepreload" crossorigin href="./assets/polyfills.CEDm44Cr.js">
+    <link rel="modulepreload" crossorigin href="./assets/advanced-inputs.0gHsBjsU.js">
+    <link rel="modulepreload" crossorigin href="./assets/codemirror-core.r8uhyzQ3.js">
+    <link rel="modulepreload" crossorigin href="./assets/http-client.C5fr6Lnu.js">
+    <link rel="modulepreload" crossorigin href="./assets/mermaid.DR3Y61_6.js">
+    <link rel="modulepreload" crossorigin href="./assets/query-devtools.DIz6FZCX.js">
+    <link rel="modulepreload" crossorigin href="./assets/validation.Bd3jvxDI.js">
+    <link rel="modulepreload" crossorigin href="./assets/animations.BHEQrG-H.js">
+    <link rel="modulepreload" crossorigin href="./assets/react-vtree.BInx5Ne5.js">
+    <link rel="modulepreload" crossorigin href="./assets/vendor.BXOjCMjt.js">
+    <link rel="modulepreload" crossorigin href="./assets/i18n.CenFdT2j.js">
+    <link rel="modulepreload" crossorigin href="./assets/react-interactions.BEfrmSAG.js">
+    <link rel="modulepreload" crossorigin href="./assets/routing.B1O2pwc0.js">
+    <link rel="modulepreload" crossorigin href="./assets/radix-ui.BGubVf3o.js">
+    <link rel="modulepreload" crossorigin href="./assets/tanstack-vendor.C7oK5bXW.js">
+    <link rel="modulepreload" crossorigin href="./assets/avatars.DwBzmTCp.js">
+    <link rel="modulepreload" crossorigin href="./assets/framer-motion.6mTbS3M5.js">
+    <link rel="modulepreload" crossorigin href="./assets/virtualization.tO5YDG7Y.js">
+    <link rel="modulepreload" crossorigin href="./assets/headlessui.8omgZzEp.js">
+    <link rel="modulepreload" crossorigin href="./assets/markdown-processing.CjMf2xPH.js">
+    <link rel="modulepreload" crossorigin href="./assets/utilities.HUTk6tC6.js">
+    <link rel="modulepreload" crossorigin href="./assets/date-utils.C_DbPEjY.js">
+    <link rel="modulepreload" crossorigin href="./assets/forms.DQMwNapF.js">
+    <link rel="modulepreload" crossorigin href="./assets/math-katex.dI9Ti9PO.js">
+    <link rel="modulepreload" crossorigin href="./assets/hooks.B1bIw__D.js">
+    <link rel="modulepreload" crossorigin href="./assets/SetKeyDialog.CY0x0Jby.js">
+    <link rel="modulepreload" crossorigin href="./assets/security-ui.B17a9jwF.js">
+    <link rel="modulepreload" crossorigin href="./assets/ProjectEditDialog.CUQtxohF.js">
+    <link rel="modulepreload" crossorigin href="./assets/forms.R5CqMgX6.js">
+    <link rel="modulepreload" crossorigin href="./assets/MyFilesModal.hEOYyTi3.js">
+    <link rel="modulepreload" crossorigin href="./assets/queries.ixN2uq8y.js">
+    <link rel="modulepreload" crossorigin href="./assets/markdown.t4vnvQDY.js">
+    <link rel="modulepreload" crossorigin href="./assets/eventSelection.BhYOG0tI.js">
     <link rel="stylesheet" crossorigin href="./assets/math-katex.uZ8_QngQ.css">
-    <link rel="stylesheet" crossorigin href="./assets/index.DVEFiMMW.css">
-  <link rel="manifest" href="./manifest.webmanifest" crossorigin="use-credentials"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script><link rel="stylesheet" href="./assets/custom.css"></head>
+    <link rel="stylesheet" crossorigin href="./assets/index.DnNAcCKP.css">
+  <link rel="manifest" href="./manifest.webmanifest" crossorigin="use-credentials"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script>  <link rel="stylesheet" href="assets/custom.css" />
+  </head>
   <body>
     <div id="root">
       <div id="loading-container"></div>
