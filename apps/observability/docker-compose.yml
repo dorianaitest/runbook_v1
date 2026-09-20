@@ -2,6 +2,11 @@ x-zeek-bridge: &zeek-bridge
   image: zeek/zeek:lts
   restart: unless-stopped
   network_mode: host
+  # Daemon runs with userns-remap (Teil 2.6). host network namespace is
+  # incompatible with remapped userns → opt this container back into the
+  # host user namespace (same as api/litellm). Zeek needs host net + NET_RAW/
+  # NET_ADMIN to sniff the bridge interfaces for egress attribution.
+  userns_mode: "host"
   cap_add:
     - NET_RAW
     - NET_ADMIN
@@ -83,6 +88,10 @@ services:
     image: grafana/promtail:3.3.2
     container_name: promtail
     restart: unless-stopped
+    # userns-remap (Teil 2.6): promtail must read root-owned docker json logs
+    # (/var/lib/docker/containers), the docker socket, and luca-owned zeek-logs.
+    # Remapped to uid 100000 it can read none → run as real root (read-only mounts).
+    userns_mode: "host"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -170,6 +179,9 @@ services:
     command:
       - '--path.rootfs=/host'
       - '--collector.textfile.directory=/textfile'
+    # userns-remap (Teil 2.6): host PID namespace is incompatible with remapped
+    # userns → opt back into the host user namespace (same as zeek/api/litellm).
+    userns_mode: "host"
     pid: host
     volumes:
       - /:/host:ro,rslave
