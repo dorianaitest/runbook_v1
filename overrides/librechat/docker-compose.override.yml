@@ -32,6 +32,8 @@ services:
       - SERPER_API_URL=http://pii-gate:8000/serper
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:?}
       - FIRECRAWL_API_URL=http://pii-gate:8000/firecrawl
+      # Reranker: required 3rd component or LibreChat won't register web_search.
+      - JINA_API_KEY=${JINA_API_KEY:?}
     ports: !reset []
     networks:
       - default

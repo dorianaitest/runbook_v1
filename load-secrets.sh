@@ -65,6 +65,9 @@ export N8N_ENCRYPTION_KEY=$(fetch N8N-ENCRYPTION-KEY)
 # lives in the compose environment block, not here.
 export SERPER_API_KEY=$(fetch SERPER-API-KEY)
 export FIRECRAWL_API_KEY=$(fetch FIRECRAWL-API-KEY)
+# Jina reranker (required 3rd web-search component; without it LibreChat deems
+# web-search auth incomplete and never registers the web_search tool):
+export JINA_API_KEY=$(fetch JINA-API-KEY)
 
 # ── Observability ─────────────────────────────────────────────────────────────
 export GRAFANA_ADMIN_PASSWORD=$(fetch GRAFANA-ADMIN-PASSWORD)
