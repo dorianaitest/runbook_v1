@@ -71,6 +71,10 @@ export JINA_API_KEY=$(fetch JINA-API-KEY)
 
 # ── Observability ─────────────────────────────────────────────────────────────
 export GRAFANA_ADMIN_PASSWORD=$(fetch GRAFANA-ADMIN-PASSWORD)
+# Mailjet SMTP for Grafana alert delivery (Container-down/Budget/Failed-Logins/
+# Backup-age). Kept solely as the alert channel — not used elsewhere.
+export MAILJET_API_KEY=$(fetch MAILJET-API-KEY)
+export MAILJET_SMTP_SECRET=$(fetch MAILJET-SMTP-SECRET)
 
 # ── Revoke session ────────────────────────────────────────────────────────────
 az logout --output none 2>/dev/null

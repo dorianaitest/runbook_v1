@@ -47,7 +47,7 @@ services:
       - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
       - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
     working_dir: /logs
-    command: zeek -i br-87f787760713 -C /opt/zeek/share/zeek/site/local.zeek
+    command: zeek -i br-22fc4c4febb8 -C /opt/zeek/share/zeek/site/local.zeek
 
   zeek-librechat-default:
     <<: *zeek-bridge
@@ -57,7 +57,7 @@ services:
       - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
       - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
     working_dir: /logs
-    command: zeek -i br-9bd8fc9d113a -C /opt/zeek/share/zeek/site/local.zeek
+    command: zeek -i br-2c6a5bcdd7c5 -C /opt/zeek/share/zeek/site/local.zeek
 
   zeek-fastapi-default:
     <<: *zeek-bridge
@@ -67,7 +67,7 @@ services:
       - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
       - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
     working_dir: /logs
-    command: zeek -i br-82d9079a41b9 -C /opt/zeek/share/zeek/site/local.zeek
+    command: zeek -i br-e880b5c05554 -C /opt/zeek/share/zeek/site/local.zeek
 
   zeek-code-net:
     <<: *zeek-bridge
@@ -77,7 +77,7 @@ services:
       - ./local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
       - ./container-map.tsv:/opt/zeek/share/zeek/site/container-map.tsv:ro
     working_dir: /logs
-    command: zeek -i br-9926dcb29151 -C /opt/zeek/share/zeek/site/local.zeek
+    command: zeek -i br-e5e977237ade -C /opt/zeek/share/zeek/site/local.zeek
 
   promtail:
     image: grafana/promtail:3.3.2
