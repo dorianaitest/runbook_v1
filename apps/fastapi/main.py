@@ -120,7 +120,9 @@ async def health():
 
 
 @app.get("/gateway/stats")
-async def stats():
+async def stats(_=Depends(check_key)):
+    # Usage metadata — requires the agent API key (x-api-key). Health stays open
+    # for monitoring; stats does not, so it can't be scraped from the public edge.
     from database import get_stats
     return await get_stats()
 

@@ -35,7 +35,13 @@ services:
       - "traefik.http.routers.fastapi.entrypoints=websecure"
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt-dns"
-      - "traefik.http.routers.fastapi.middlewares=frame-deny@file"
+      # Rate-limit the public api.* edge (anti-abuse / anti-scan). Only affects
+      # traffic through Traefik; LibreChat's internal chat path goes over app_net
+      # straight to fastapi-gateway:8001 and is NOT throttled here.
+      - "traefik.http.middlewares.fastapi-ratelimit.rateLimit.average=120"
+      - "traefik.http.middlewares.fastapi-ratelimit.rateLimit.period=1m"
+      - "traefik.http.middlewares.fastapi-ratelimit.rateLimit.burst=200"
+      - "traefik.http.routers.fastapi.middlewares=fastapi-ratelimit,frame-deny@file"
       - "traefik.http.services.fastapi.loadbalancer.server.port=8001"
 
   postgres:
