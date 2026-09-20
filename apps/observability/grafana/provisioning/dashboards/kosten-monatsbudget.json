@@ -1,0 +1,519 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRES",
+      "label": "LiteLLM Postgres",
+      "description": "Postgres-Datasource auf die litellm-DB",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "time": { "from": "now-30d", "to": "now" },
+  "timezone": "browser",
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": ["kosten", "budget", "litellm"],
+  "title": "Kosten / Monatsbudget (global)",
+  "uid": "kosten-monatsbudget",
+  "templating": {
+    "list": [
+      {
+        "type": "textbox",
+        "name": "serper_usd",
+        "label": "Serper (USD/Monat)",
+        "query": "0",
+        "current": { "selected": false, "text": "0", "value": "0" },
+        "options": [{ "selected": true, "text": "0", "value": "0" }],
+        "hide": 0
+      },
+      {
+        "type": "textbox",
+        "name": "firecrawl_usd",
+        "label": "Firecrawl (USD/Monat)",
+        "query": "0",
+        "current": { "selected": false, "text": "0", "value": "0" },
+        "options": [{ "selected": true, "text": "0", "value": "0" }],
+        "hide": 0
+      },
+      {
+        "type": "textbox",
+        "name": "jina_usd",
+        "label": "Jina AI (USD/Monat)",
+        "query": "0",
+        "current": { "selected": false, "text": "0", "value": "0" },
+        "options": [{ "selected": true, "text": "0", "value": "0" }],
+        "hide": 0
+      },
+      {
+        "type": "textbox",
+        "name": "gesamtbudget_usd",
+        "label": "Gesamtbudget (USD/Monat)",
+        "query": "45",
+        "current": { "selected": false, "text": "45", "value": "45" },
+        "options": [{ "selected": true, "text": "45", "value": "45" }],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "gauge",
+      "title": "LLM-Budget verbraucht (LiteLLM-Limit)",
+      "description": "Spend-ZÃ¤hler des Virtual Keys 'librechat-instance' gegen sein max_budget â€” exakt der Wert, gegen den LiteLLM sperrt. Limit und Reset kommen live aus der DB; Limit-Ã„nderungen via /key/update erscheinen automatisch.",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT round((spend / NULLIF(max_budget, 0) * 100)::numeric, 1) AS \"Prozent\" FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "Gesamtkosten vs. Gesamtbudget",
+      "description": "LLM-Spend (LiteLLM-Key) + FixbetrÃ¤ge Serper/Firecrawl/Jina (Dashboard-Variablen oben) gegen die Variable 'Gesamtbudget'. Dezimaltrenner in den Variablen: Punkt, nicht Komma.",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT round(((spend + ${serper_usd} + ${firecrawl_usd} + ${jina_usd}) / NULLIF(${gesamtbudget_usd}, 0) * 100)::numeric, 1) AS \"Prozent\" FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "piechart",
+      "title": "Kostenverteilung im Budget-Fenster",
+      "description": "Azure/AWS/Google aus den SpendLogs seit Beginn des aktuellen 30-Tage-Budget-Fensters (budget_reset_at âˆ’ 30 Tage); Serper/Firecrawl/Jina als FixbetrÃ¤ge aus den Variablen. Hinweis: SpendLogs zÃ¤hlen ALLE Keys, der Gauge links nur den Enforcement-ZÃ¤hler â€” kleine Abweichungen sind normal.",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 0 },
+      "options": {
+        "pieType": "pie",
+        "displayLabels": ["name", "value"],
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "decimals": 2 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 'Azure Foundry' AS \"Dienst\", round(coalesce(sum(spend), 0)::numeric, 2) AS \"USD\" FROM \"LiteLLM_SpendLogs\" WHERE coalesce(custom_llm_provider, '') NOT IN ('bedrock', 'vertex_ai') AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL) UNION ALL SELECT 'AWS Bedrock', round(coalesce(sum(spend), 0)::numeric, 2) FROM \"LiteLLM_SpendLogs\" WHERE custom_llm_provider = 'bedrock' AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL) UNION ALL SELECT 'Google Vertex AI', round(coalesce(sum(spend), 0)::numeric, 2) FROM \"LiteLLM_SpendLogs\" WHERE custom_llm_provider = 'vertex_ai' AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL) UNION ALL SELECT 'Serper', ${serper_usd} UNION ALL SELECT 'Firecrawl', ${firecrawl_usd} UNION ALL SELECT 'Jina AI', ${jina_usd}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "LLM-Spend (Fenster)",
+      "description": "Enforcement-ZÃ¤hler des Virtual Keys â€” dieselbe Zahl, die LiteLLM gegen das Limit prÃ¼ft.",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 6 },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT round(spend::numeric, 2) AS \"USD\" FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "LLM-Limit",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 6 },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT max_budget AS \"USD\" FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Budget-Reset am",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 6 },
+      "options": { "colorMode": "none", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/", "values": false } },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_char(budget_reset_at, 'DD.MM.YYYY') AS \"Reset\" FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Gesamtkosten (Fenster)",
+      "description": "LLM-Spend + Serper + Firecrawl + Jina (FixbetrÃ¤ge aus den Variablen).",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 9 },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT round((spend + ${serper_usd} + ${firecrawl_usd} + ${jina_usd})::numeric, 2) AS \"USD\" FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "API-Dienste fix (Serper+Firecrawl+Jina)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 9 },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT round((${serper_usd} + ${firecrawl_usd} + ${jina_usd})::numeric, 2) AS \"USD\""
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Requests im Fenster",
+      "description": "Alle Requests in den SpendLogs seit Fensterbeginn (alle Keys).",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 9 },
+      "options": { "colorMode": "none", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS \"Requests\" FROM \"LiteLLM_SpendLogs\" WHERE \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL)"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "LLM-Kosten pro Tag (Azure / AWS / Google)",
+      "description": "SpendLogs, folgt dem Zeitbereich oben rechts (Standard: 30 Tage).",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 9, "w": 15, "x": 0, "y": 12 },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "barAlignment": 0,
+            "stacking": { "mode": "normal", "group": "A" },
+            "axisPlacement": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', \"startTime\") AS \"time\", CASE WHEN custom_llm_provider = 'bedrock' THEN 'AWS Bedrock' WHEN custom_llm_provider = 'vertex_ai' THEN 'Google Vertex AI' ELSE 'Azure Foundry' END AS \"metric\", sum(spend) AS \"value\" FROM \"LiteLLM_SpendLogs\" WHERE $__timeFilter(\"startTime\") GROUP BY 1, 2 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Kosten nach Modell (Budget-Fenster)",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+      "gridPos": { "h": 9, "w": 9, "x": 15, "y": 12 },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "USD", "desc": true }]
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "filterable": false } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "USD" },
+            "properties": [{ "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 }]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(nullif(model_group, ''), model) AS \"Modell\", count(*) AS \"Requests\", sum(total_tokens) AS \"Tokens\", round(sum(spend)::numeric, 4) AS \"USD\" FROM \"LiteLLM_SpendLogs\" WHERE \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL) GROUP BY 1 ORDER BY 4 DESC LIMIT 15"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "Bild-Kosten (gpt-image-2 / Gemini)",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "panels": [
+        {
+          "id": 13,
+          "type": "stat",
+          "title": "Bild-Kosten (Budget-Fenster)",
+          "description": "Summe aller Bildgenerierungs-Spends seit Beginn des aktuellen 30-Tage-Budget-Fensters. Filter: call_type aimage_generation (gpt-image-2 via Gateway) + pass_through_endpoint (Gemini via Vertex-Passthrough).",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "gridPos": { "h": 4, "w": 5, "x": 0, "y": 22 },
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT round(coalesce(sum(spend), 0)::numeric, 2) AS \"USD\" FROM \"LiteLLM_SpendLogs\" WHERE call_type IN ('aimage_generation', 'pass_through_endpoint') AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL)"
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "type": "stat",
+          "title": "Bilder (Fenster)",
+          "description": "Anzahl Bildgenerierungs-Requests im Budget-Fenster.",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "gridPos": { "h": 4, "w": 4, "x": 5, "y": 22 },
+          "options": { "colorMode": "none", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT count(*) AS \"Bilder\" FROM \"LiteLLM_SpendLogs\" WHERE call_type IN ('aimage_generation', 'pass_through_endpoint') AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL)"
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "type": "stat",
+          "title": "Ã˜ Kosten pro Bild (Fenster)",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "gridPos": { "h": 4, "w": 5, "x": 9, "y": 22 },
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT round((coalesce(sum(spend), 0) / NULLIF(count(*), 0))::numeric, 4) AS \"USD\" FROM \"LiteLLM_SpendLogs\" WHERE call_type IN ('aimage_generation', 'pass_through_endpoint') AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL)"
+            }
+          ]
+        },
+        {
+          "id": 16,
+          "type": "piechart",
+          "title": "Bild-Kosten nach Modell (Fenster)",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "gridPos": { "h": 9, "w": 10, "x": 14, "y": 22 },
+          "options": {
+            "pieType": "pie",
+            "displayLabels": ["name", "value"],
+            "legend": { "displayMode": "table", "placement": "bottom", "values": ["value", "percent"] },
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
+            "tooltip": { "mode": "single" }
+          },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT CASE WHEN model ILIKE '%gpt-image%' THEN 'GPT-Image-2 (Azure)' ELSE 'Gemini 2.5 Flash Image (Google)' END AS \"Modell\", round(coalesce(sum(spend), 0)::numeric, 2) AS \"USD\" FROM \"LiteLLM_SpendLogs\" WHERE call_type IN ('aimage_generation', 'pass_through_endpoint') AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL) GROUP BY 1"
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "type": "table",
+          "title": "Ãœbersicht nach Modell (Budget-Fenster)",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "gridPos": { "h": 5, "w": 14, "x": 0, "y": 26 },
+          "options": { "showHeader": true, "sortBy": [{ "displayName": "USD", "desc": true }] },
+          "fieldConfig": {
+            "defaults": { "custom": { "align": "auto", "filterable": false } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "USD" },
+                "properties": [{ "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Ã˜/Bild" },
+                "properties": [{ "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 }]
+              }
+            ]
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT CASE WHEN model ILIKE '%gpt-image%' THEN 'GPT-Image-2 (Azure)' ELSE 'Gemini 2.5 Flash Image (Google)' END AS \"Modell\", count(*) AS \"Bilder\", round(sum(spend)::numeric, 4) AS \"USD\", round((sum(spend) / NULLIF(count(*), 0))::numeric, 4) AS \"Ã˜/Bild\" FROM \"LiteLLM_SpendLogs\" WHERE call_type IN ('aimage_generation', 'pass_through_endpoint') AND \"startTime\" >= (SELECT budget_reset_at - interval '30 days' FROM \"LiteLLM_VerificationToken\" WHERE max_budget IS NOT NULL) GROUP BY 1 ORDER BY 3 DESC"
+            }
+          ]
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Bild-Kosten pro Tag",
+          "description": "Folgt dem Zeitbereich oben rechts (Standard: 30 Tage).",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 31 },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "currencyUSD",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "lineWidth": 1,
+                "barAlignment": 0,
+                "stacking": { "mode": "normal", "group": "A" },
+                "axisPlacement": "auto"
+              }
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "grafana-postgresql-datasource", "uid": "litellm-postgres" },
+              "editorMode": "code",
+              "format": "time_series",
+              "rawQuery": true,
+              "rawSql": "SELECT date_trunc('day', \"startTime\") AS \"time\", CASE WHEN model ILIKE '%gpt-image%' THEN 'GPT-Image-2 (Azure)' ELSE 'Gemini 2.5 Flash Image (Google)' END AS \"metric\", sum(spend) AS \"value\" FROM \"LiteLLM_SpendLogs\" WHERE call_type IN ('aimage_generation', 'pass_through_endpoint') AND $__timeFilter(\"startTime\") GROUP BY 1, 2 ORDER BY 1"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
