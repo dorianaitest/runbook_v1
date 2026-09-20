@@ -979,7 +979,7 @@ modelSpecs:
       hideBadgeRow: true
       preset:
         endpoint: "agents"
-        agent_id: "agent_rT24vUvsqLGgxM0a9kbDf"
+        agent_id: "agent_UbTpmJZe8292gqMn2G3Dt"
     - name: "bild-gemini"
       label: "Gemini 2.5 Flash Image"
       description: '<span class="usage-desc"><span class="i18n-de">Schnelle Bilderzeugung und -bearbeitung</span><span class="i18n-en">Fast image generation and editing</span><br><span class="usage-wrap"><span class="usage-track usage-2"></span></span></span>'
@@ -988,7 +988,7 @@ modelSpecs:
       hideBadgeRow: true
       preset:
         endpoint: "agents"
-        agent_id: "agent_jWOwXhCjYjuEOoCXuteWD"
+        agent_id: "agent_6Zt9dsxZLgGqPS-DsokRM"
 # Example modelSpecs configuration showing grouping options
 # The 'group' field organizes model specs in the UI selector:
 # - If 'group' matches an endpoint name (e.g., "openAI", "groq"), the spec appears nested under that endpoint
