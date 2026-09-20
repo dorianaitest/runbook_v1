@@ -1,6 +1,20 @@
 apiVersion: 1
 
+# Provisioned unified-alerting config (survives a Grafana rebuild — the old
+# UI-created alerts were lost on the 23.08 reset). Delivery = Mailjet SMTP
+# (configured in docker-compose.yml GF_SMTP_*). Recipient = $ALERT_EMAIL_TO.
+# Datasource UIDs: loki / prometheus / litellm-postgres (see datasources/).
+
 contactPoints:
+  - orgId: 1
+    name: email-ops
+    receivers:
+      - uid: email-ops-uid
+        type: email
+        settings:
+          addresses: $ALERT_EMAIL_TO
+          singleEmail: true
+  # Local test sink (kept for smoke-testing the alerting pipeline without mail).
   - orgId: 1
     name: test-webhook
     receivers:
@@ -12,7 +26,8 @@ contactPoints:
 
 policies:
   - orgId: 1
-    receiver: test-webhook
+    receiver: email-ops
+    group_by: ['grafana_folder', 'alertname']
 
 groups:
   - orgId: 1
@@ -20,6 +35,7 @@ groups:
     folder: Alerts
     interval: 1m
     rules:
+      # ── 1) High 5xx error rate (Traefik access logs) ──────────────────────
       - uid: 5xx-high-rate
         title: "High 5xx Error Rate"
         condition: C
@@ -37,33 +53,22 @@ groups:
           - refId: B
             datasourceUid: __expr__
             model:
-              datasource:
-                type: __expr__
-                uid: __expr__
+              datasource: { type: __expr__, uid: __expr__ }
               expression: A
               reducer: sum
               refId: B
-              settings:
-                mode: dropNN
+              settings: { mode: dropNN }
               type: reduce
           - refId: C
             datasourceUid: __expr__
             model:
+              datasource: { type: __expr__, uid: __expr__ }
               conditions:
-                - evaluator:
-                    params: [5]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [B]
-                  reducer:
-                    params: []
-                    type: last
+                - evaluator: { params: [5], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
                   type: query
-              datasource:
-                type: __expr__
-                uid: __expr__
               expression: B
               refId: C
               type: threshold
@@ -72,5 +77,140 @@ groups:
         execErrState: Error
         annotations:
           summary: "High 5xx error rate"
-          description: "More than 5 five-xx errors in the last 5 minutes"
+          description: "More than 5 five-xx responses in the last 5 minutes."
+        labels: {}
+
+      # ── 2) Failed logins (brute-force signal) ─────────────────────────────
+      - uid: failed-logins
+        title: "Failed Logins Spike"
+        condition: C
+        data:
+          - refId: A
+            queryType: range
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: 'sum(count_over_time({log_category="access"} |~ "POST /api/auth/login" |~ " (401|422) " [5m]))'
+              queryType: range
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: sum
+              refId: B
+              settings: { mode: dropNN }
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              conditions:
+                - evaluator: { params: [10], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+                  type: query
+              expression: B
+              refId: C
+              type: threshold
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Failed login spike"
+          description: "More than 10 failed logins (401/422 on /api/auth/login) in 5 minutes."
+        labels: {}
+
+      # ── 3) Disk space low on root filesystem (node-exporter) ──────────────
+      - uid: disk-space-low
+        title: "Disk Space Low"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: '100 * node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"} / node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              refId: B
+              settings: { mode: dropNN }
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              conditions:
+                - evaluator: { params: [15], type: lt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+                  type: query
+              expression: B
+              refId: C
+              type: threshold
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: "Root filesystem almost full"
+          description: "Less than 15% free space on / for 5 minutes."
+        labels: {}
+
+      # ── 4) LiteLLM budget consumption (spend vs. max_budget) ──────────────
+      - uid: budget-consumption
+        title: "Budget Near Limit"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: litellm-postgres
+            model:
+              datasource: { type: grafana-postgresql-datasource, uid: litellm-postgres }
+              rawSql: 'SELECT max(spend / NULLIF(max_budget, 0) * 100) AS value FROM "LiteLLM_VerificationToken" WHERE max_budget IS NOT NULL'
+              format: table
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              refId: B
+              settings: { mode: dropNN }
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              conditions:
+                - evaluator: { params: [80], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+                  type: query
+              expression: B
+              refId: C
+              type: threshold
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "LiteLLM budget near limit"
+          description: "A LiteLLM key has consumed more than 80% of its max_budget."
         labels: {}

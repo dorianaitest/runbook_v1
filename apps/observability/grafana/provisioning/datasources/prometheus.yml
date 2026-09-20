@@ -1,0 +1,16 @@
+apiVersion: 1
+
+# Prometheus datasource. Prometheus scrapes node-exporter (host RAM/Disk/CPU)
+# and lives on the observability network alongside Grafana. Provisioned as a
+# file so it survives a rebuild (was UI-only before → lost on the 23.08 reset).
+# Enables the node dashboard (Grafana.com 1860, import in UI) and the
+# "Disk space low" alert.
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: false
+    jsonData:
+      timeInterval: 15s

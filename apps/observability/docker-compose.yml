@@ -118,6 +118,12 @@ services:
       - GF_SMTP_PASSWORD=${MAILJET_SMTP_SECRET}
       - GF_SMTP_FROM_ADDRESS=noreply@chat.demo-ki-instanz.de
       - GF_SMTP_FROM_NAME=Grafana Alerts
+      # Read-only password for the LiteLLM-Postgres datasource (provisioning
+      # interpolates $LITELLM_POSTGRES_PASSWORD); from load-secrets → vault.
+      - LITELLM_POSTGRES_PASSWORD=${LITELLM_POSTGRES_PASSWORD:?}
+      # Alert recipient — set in observability/.env to a function/team address
+      # (F-16: not a private inbox for real customers). Used by alerting.yml.
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:?}
       - GF_SECURITY_DISABLE_GRAVATAR=true
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false

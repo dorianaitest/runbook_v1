@@ -1,0 +1,20 @@
+apiVersion: 1
+
+# LiteLLM cost database (shared postgres, DB "litellm"). Both grafana and
+# postgres are on app_net, so the host "postgres:5432" resolves. Read access
+# via the litellm role; password comes from the Grafana process environment
+# ($LITELLM_POSTGRES_PASSWORD, injected in docker-compose.yml from load-secrets
+# → vault). Used by the "Budget" alert (LiteLLM_VerificationToken.spend).
+datasources:
+  - name: LiteLLM-Postgres
+    type: grafana-postgresql-datasource
+    uid: litellm-postgres
+    access: proxy
+    url: postgres:5432
+    user: litellm
+    jsonData:
+      database: litellm
+      sslmode: disable
+      postgresVersion: 1500
+    secureJsonData:
+      password: $LITELLM_POSTGRES_PASSWORD
