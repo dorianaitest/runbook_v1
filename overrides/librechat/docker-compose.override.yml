@@ -10,7 +10,7 @@ services:
     environment:
       - LIBRECHAT_CODE_BASEURL=http://code-interpreter-api:8000
       - LIBRECHAT_CODE_API_KEY=${LIBRECHAT_CODE_API_KEY}
-      - IMAGE_GEN_OAI_API_KEY=${IMAGE_GEN_OAI_API_KEY}
+      - IMAGE_GEN_OAI_API_KEY=sk-librechat-admin
       - IMAGE_GEN_OAI_BASEURL=http://fastapi-gateway:8001/v1
       - IMAGE_GEN_OAI_MODEL=gpt-image-2
       - GOOGLE_SERVICE_KEY_FILE=/app/vertex-sa.json
@@ -18,7 +18,7 @@ services:
       - GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
       # Google Image Tool routing durch LiteLLM:
       - GEMINI_IMAGE_BASEURL=http://litellm:4000/vertex_ai
-      - GEMINI_IMAGE_API_KEY=${IMAGE_GEN_OAI_API_KEY}
+      - GEMINI_IMAGE_API_KEY=sk-librechat-admin
     ports: !reset []
     networks:
       - default
