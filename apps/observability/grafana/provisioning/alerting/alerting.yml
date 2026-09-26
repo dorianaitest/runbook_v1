@@ -214,3 +214,97 @@ groups:
           summary: "LiteLLM budget near limit"
           description: "A LiteLLM key has consumed more than 80% of its max_budget."
         labels: {}
+
+      # ── 5) Container down (container-watchdog.sh → textfile collector) ────
+      # One alert instance per container (multi-dimensional, label "name").
+      # NoData = OK here; a dead watchdog is caught by rule 6.
+      - uid: container-down
+        title: "Container Down"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'container_up'
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              refId: B
+              settings: { mode: dropNN }
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              conditions:
+                - evaluator: { params: [1], type: lt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+                  type: query
+              expression: B
+              refId: C
+              type: threshold
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Container {{ $labels.name }} is down"
+          description: "Critical container {{ $labels.name }} has not been running for 2 minutes."
+        labels: {}
+
+      # ── 6) Watchdog freshness (is the watchdog itself alive?) ─────────────
+      # Age of containers.prom in seconds. Missing file / dead node-exporter
+      # = NoData → Alerting.
+      - uid: watchdog-stale
+        title: "Container-Watchdog stale"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'time() - node_textfile_mtime_seconds{file=~".*containers.prom"}'
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              refId: B
+              settings: { mode: dropNN }
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              conditions:
+                - evaluator: { params: [300], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+                  type: query
+              expression: B
+              refId: C
+              type: threshold
+        for: 0s
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: "Container-Watchdog is not running"
+          description: "containers.prom was not updated for more than 5 minutes (cron/script/node-exporter dead) — container-down alerts are blind."
+        labels: {}
