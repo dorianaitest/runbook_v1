@@ -5,7 +5,7 @@ services:
     # HTML-artifact previews are served by this static server, not the
     # runtime bundler image.
     build:
-      context: https://github.com/dorianaitest/static-browser-server.git#80acf1fd2346e8fd6fcded643653e2f50bd1bcb1
+      context: https://github.com/dorianaitest/static-browser-server.git#3ee21a5cf5f62a1b83ab89f97bd452411e463cba
     container_name: sandpack-static
     restart: unless-stopped
     healthcheck:
