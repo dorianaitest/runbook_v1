@@ -1,6 +1,6 @@
 services:
   sandpack-bundler:
-    image: ghcr.io/librechat-ai/codesandbox-client/bundler:latest
+    image: ghcr.io/librechat-ai/codesandbox-client/bundler:82018dbc54bd2031b0cae3248dd5014e5985afb97255d1938ab38be29bc280da
     container_name: sandpack-bundler
     restart: unless-stopped
     healthcheck:
