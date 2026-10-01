@@ -18,7 +18,7 @@ services:
       - 'traefik.http.routers.sandpack-bundler.rule=Host(`bundler.artifacts.demo-ki-instanz.de`) || HostRegexp(`^[a-z0-9]+-bundler\.artifacts\.demo-ki-instanz\.de$$`)'
       - "traefik.http.routers.sandpack-bundler.entrypoints=websecure"
       - "traefik.http.routers.sandpack-bundler.tls.certresolver=letsencrypt-dns"
-      - "traefik.http.routers.sandpack-static.tls=true"
+      - "traefik.http.routers.sandpack-bundler.tls=true"
       - "traefik.http.routers.sandpack-bundler.tls.domains[0].main=artifacts.demo-ki-instanz.de"
       - "traefik.http.routers.sandpack-bundler.tls.domains[0].sans=*.artifacts.demo-ki-instanz.de"
       - "traefik.http.routers.sandpack-bundler.middlewares=sandpack-csp@file"
