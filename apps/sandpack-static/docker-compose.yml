@@ -20,6 +20,7 @@ services:
       - 'traefik.http.routers.sandpack-static.rule=Host(`static.artifacts.demo-ki-instanz.de`) || HostRegexp(`^[a-z0-9]+-static\.artifacts\.demo-ki-instanz\.de$$`)'
       - "traefik.http.routers.sandpack-static.entrypoints=websecure"
       - "traefik.http.routers.sandpack-static.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.routers.sandpack-static.tls=true"
       - "traefik.http.routers.sandpack-static.tls.domains[0].main=artifacts.demo-ki-instanz.de"
       - "traefik.http.routers.sandpack-static.tls.domains[0].sans=*.artifacts.demo-ki-instanz.de"
       - "traefik.http.routers.sandpack-static.middlewares=sandpack-csp@file"
