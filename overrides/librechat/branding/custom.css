@@ -115,21 +115,32 @@ html[lang^="de"] .i18n-en { display: none; }
 .usage-4 { --usage-pos: 70%; --usage-color: #f97316; }
 .usage-5 { --usage-pos: 90%; --usage-color: #ef4444; }
 
-/* Solasas-Branding auf der Startseite: Logo + Schriftzug ueber der Begruessung.
-   Anker = Landing-Container (Landing.tsx: "transform-gpu ... pb-16" > "gap-0 p-2").
-   Bei Image-Update pruefen, ob die Klassen noch so heissen. */
-.transform-gpu.pb-16 > .flex-col.gap-0.p-2::before {
+/* Solasas-Branding oben links in der Seitenleiste: Logo + Schriftzug ueber der
+   Chatliste, auf Hoehe des Seitenleisten-Buttons der Icon-Leiste.
+   Anker = <nav> im UnifiedSidebar (Sidebar.tsx: "min-h-0 flex-1 overflow-hidden
+   bg-surface-primary-alt"). Bei Image-Update pruefen, ob die Klassen noch so heissen. */
+nav.flex-1.overflow-hidden.bg-surface-primary-alt {
+  display: flex;
+  flex-direction: column;
+}
+nav.flex-1.overflow-hidden.bg-surface-primary-alt::before {
   content: "Solasas";
-  display: block;
-  margin-bottom: 1.25rem;
-  padding-left: 60px;
-  background: url("logo.svg") left center / 50px 50px no-repeat;
-  line-height: 50px;
-  font-size: 2.25rem;
+  flex: 0 0 auto;
+  margin: 8px 12px 0;
+  padding-left: 40px;
+  background: url("logo.svg") left center / 32px 32px no-repeat;
+  line-height: 36px;
+  font-size: 1.375rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #01345e;
+  white-space: nowrap;
 }
-html.dark .transform-gpu.pb-16 > .flex-col.gap-0.p-2::before {
+html.dark nav.flex-1.overflow-hidden.bg-surface-primary-alt::before {
   color: #ffffff;
+}
+nav.flex-1.overflow-hidden.bg-surface-primary-alt > div {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
 }
