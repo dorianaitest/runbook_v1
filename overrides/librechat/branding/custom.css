@@ -114,3 +114,9 @@ html[lang^="de"] .i18n-en { display: none; }
 .usage-3 { --usage-pos: 50%; --usage-color: #eab308; }
 .usage-4 { --usage-pos: 70%; --usage-color: #f97316; }
 .usage-5 { --usage-pos: 90%; --usage-color: #ef4444; }
+
+/* Seitenleiste (Icon-Rail + Chatliste) in Solasas-Hellblau #d9e6fa.
+   Tailwind erwartet RGB-Kanaele, KEIN Hex. Nur Light-Theme. */
+html:not(.dark) {
+  --surface-primary-alt: 217 230 250;
+}
