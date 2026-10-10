@@ -263,6 +263,16 @@ balance:
 # Note: If balance.enabled is true, transactions will always be enabled
 # regardless of this setting to ensure balance tracking works correctly
 
+# Sprache-zu-Text standardmaessig AUS -> Mikrofon-Button im Eingabefeld ausgeblendet.
+# Grund: ohne eigenes stt nutzt LibreChat die Browser-Spracherkennung (Chrome -> Google,
+# Edge -> Microsoft = Audio-Abfluss an US-Dienste). Zusaetzlich blockt Traefik
+# (infra/traefik/dynamic/headers.yaml) per Permissions-Policy microphone=().
+# Nur Default: Nutzer koennen es in Einstellungen > Sprache wieder einschalten (dann
+# "Mikrofon nicht verfuegbar", weil der Header weiter blockt).
+speech:
+  speechTab:
+    speechToText: false
+
 # speech:
 #   tts:
 #     openai:
