@@ -114,3 +114,22 @@ html[lang^="de"] .i18n-en { display: none; }
 .usage-3 { --usage-pos: 50%; --usage-color: #eab308; }
 .usage-4 { --usage-pos: 70%; --usage-color: #f97316; }
 .usage-5 { --usage-pos: 90%; --usage-color: #ef4444; }
+
+/* Solasas-Branding auf der Startseite: Logo + Schriftzug ueber der Begruessung.
+   Anker = Landing-Container (Landing.tsx: "transform-gpu ... pb-16" > "gap-0 p-2").
+   Bei Image-Update pruefen, ob die Klassen noch so heissen. */
+.transform-gpu.pb-16 > .flex-col.gap-0.p-2::before {
+  content: "Solasas";
+  display: block;
+  margin-bottom: 1.25rem;
+  padding-left: 60px;
+  background: url("logo.svg") left center / 50px 50px no-repeat;
+  line-height: 50px;
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #01345e;
+}
+html.dark .transform-gpu.pb-16 > .flex-col.gap-0.p-2::before {
+  color: #ffffff;
+}
