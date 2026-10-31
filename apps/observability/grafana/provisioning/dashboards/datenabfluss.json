@@ -1,0 +1,884 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "count(sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query=~\"(?i).*([.]azure[.]com|cognitiveservices|openai[.]azure|services[.]ai[.]azure|windows[.]net|eu-(central|west|north|south)-[0-9].*amazonaws|langfuse|mailjet[.]com||chat.demo-ki-instanz[.]de|api.jina[.]ai|aiplatform.eu.rep.googleapis.com|europe-west4-aiplatform.googleapis.com).*\" [$__range])))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "EU (Domains)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "count(sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query=~\"(?i).*(resend[.]com|firecrawl[.]dev|serper[.]dev|gravatar[.]com).*\" [$__range])))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "NICHT-EU (Domains)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "count(sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query=~\"(?i).*(ubuntu[.]com|canonical|debian|ntp[.]org|pool[.]ntp|letsencrypt[.]org|docker[.]io|docker[.]com|ghcr[.]io|quay[.]io|github[.]com|githubusercontent|in-addr[.]arpa|ip6[.]arpa|root-servers|grafana[.]com|grafana[.]org|telemetry[.]n8n[.]io|ph[.]n8n[.]io|api[.]n8n[.]io|update[.]traefik[.]io|checkpoint[.]prisma[.]io|visualstudio[.]com|packages[.]microsoft[.]com|mirror[.]hetzner[.]com|pypi[.]org|isc[.]org|prss[.]microsoft[.]com|akamaiedge[.]net|api[.]snapcraft[.]io|huggingface[.]co|[.]hf[.]co|d2h67oheeuigaw[.]cloudfront[.]net|pythonhosted[.]org|license[.]n8n[.]io|login[.]microsoftonline[.]com|ntp[.]hetzner[.]com|oauth2[.]googleapis[.]com|publicsuffix[.]org|registry[.]npmjs[.]org|aadg[.]trafficmanager[.]net|aadg[.]akadns[.]net).*\" [$__range])))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Infra/Betrieb (verlaesst EU)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "count(sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query!~\"(?i).*([.]azure[.]com|cognitiveservices|openai[.]azure|services[.]ai[.]azure|windows[.]net|eu-(central|west|north|south)-[0-9].*amazonaws|langfuse|resend[.]com|firecrawl[.]dev|serper[.]dev|gravatar[.]com|ubuntu[.]com|canonical|debian|ntp[.]org|pool[.]ntp|letsencrypt[.]org|docker[.]io|docker[.]com|ghcr[.]io|quay[.]io|github[.]com|githubusercontent|in-addr[.]arpa|ip6[.]arpa|root-servers|grafana[.]com|grafana[.]org|telemetry[.]n8n[.]io|ph[.]n8n[.]io|api[.]n8n[.]io|update[.]traefik[.]io|checkpoint[.]prisma[.]io|visualstudio[.]com|packages[.]microsoft[.]com|mirror[.]hetzner[.]com|pypi[.]org|isc[.]org|akamaiedge[.]net|api[.]snapcraft[.]io|huggingface[.]co|[.]hf[.]co|d2h67oheeuigaw[.]cloudfront[.]net|pythonhosted[.]org|license[.]n8n[.]io|login[.]microsoftonline[.]com|ntp[.]hetzner[.]com|oauth2[.]googleapis[.]com|publicsuffix[.]org|registry[.]npmjs[.]org|aadg[.]trafficmanager[.]net|aadg[.]akadns[.]net|version[.]bind|shadowserver|parrotdns|nawrocki|_dns-sd[.]_udp|example[.]com|[*]|mailjet[.]com|prss[.]microsoft[.]com|chat.demo-ki-instanz[.]de|api.jina[.]ai|aiplatform.eu.rep.googleapis.com|europe-west4-aiplatform.googleapis.com).*\" [$__range])))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "UNBEKANNT (Domains)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Bleibt in EU-Jurisdiktion (Azure-EU, AWS eu-region). Azure-Region verifizieren.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query=~\"(?i).*([.]azure[.]com|cognitiveservices|openai[.]azure|services[.]ai[.]azure|windows[.]net|eu-(central|west|north|south)-[0-9].*amazonaws|langfuse|mailjet[.]com|chat.demo-ki-instanz[.]de|api.jina[.]ai|aiplatform.eu.rep.googleapis.com|europe-west4-aiplatform.googleapis.com).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "EU — Domains",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Verlaesst die EU und kann personenbezogene Daten tragen: Suchmaschinen, Resend, Firecrawl, Langfuse, Gravatar, Telemetrie. DSGVO-relevant.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query=~\"(?i).*(resend[.]com|firecrawl[.]dev|serper[.]dev|gravatar[.]com).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "NICHT-EU — Domains (verlaesst EU, Personenbezug moeglich)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Betrieb/Infrastruktur ohne Personenbezug: OS-Updates, NTP, Zertifikate, Image-Pulls, Reverse-DNS. Verlaesst zwar EU, aber keine Nutzerdaten.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query=~\"(?i).*(ubuntu[.]com|canonical|debian|ntp[.]org|pool[.]ntp|letsencrypt[.]org|docker[.]io|docker[.]com|ghcr[.]io|quay[.]io|github[.]com|githubusercontent|in-addr[.]arpa|ip6[.]arpa|root-servers|grafana[.]com|grafana[.]org|telemetry[.]n8n[.]io|ph[.]n8n[.]io|api[.]n8n[.]io|update[.]traefik[.]io|checkpoint[.]prisma[.]io|visualstudio[.]com|packages[.]microsoft[.]com|mirror[.]hetzner[.]com|pypi[.]org|isc[.]org|prss[.]microsoft[.]com|akamaiedge[.]net|api[.]snapcraft[.]io|huggingface[.]co|[.]hf[.]co|d2h67oheeuigaw[.]cloudfront[.]net|pythonhosted[.]org|license[.]n8n[.]io|login[.]microsoftonline[.]com|ntp[.]hetzner[.]com|oauth2[.]googleapis[.]com|publicsuffix[.]org|registry[.]npmjs[.]org|aadg[.]trafficmanager[.]net|aadg[.]akadns[.]net).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "INFRA / BETRIEB (verlaesst EU, kein Personenbezug)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Domains in keiner Kategorie. Jeden Eintrag einordnen: EU, Nicht-EU oder Infra.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (query) (count_over_time({job=\"zeek\", log_type=\"dns\"} | json | __error__=\"\" | query!~\"(?i).*([.]azure[.]com|cognitiveservices|openai[.]azure|services[.]ai[.]azure|windows[.]net|eu-(central|west|north|south)-[0-9].*amazonaws|langfuse|resend[.]com|firecrawl[.]dev|serper[.]dev|gravatar[.]com|ubuntu[.]com|canonical|debian|ntp[.]org|pool[.]ntp|letsencrypt[.]org|docker[.]io|docker[.]com|ghcr[.]io|quay[.]io|github[.]com|githubusercontent|in-addr[.]arpa|ip6[.]arpa|root-servers|grafana[.]com|grafana[.]org|telemetry[.]n8n[.]io|ph[.]n8n[.]io|api[.]n8n[.]io|update[.]traefik[.]io|checkpoint[.]prisma[.]io|visualstudio[.]com|packages[.]microsoft[.]com|mirror[.]hetzner[.]com|pypi[.]org|isc[.]org|akamaiedge[.]net|api[.]snapcraft[.]io|huggingface[.]co|[.]hf[.]co|d2h67oheeuigaw[.]cloudfront[.]net|pythonhosted[.]org|license[.]n8n[.]io|login[.]microsoftonline[.]com|ntp[.]hetzner[.]com|oauth2[.]googleapis[.]com|publicsuffix[.]org|registry[.]npmjs[.]org|aadg[.]trafficmanager[.]net|aadg[.]akadns[.]net|version[.]bind|shadowserver|parrotdns|nawrocki|_dns-sd[.]_udp|example[.]com|[*]|mailjet[.]com|prss[.]microsoft[.]com|chat.demo-ki-instanz[.]de|api.jina[.]ai|aiplatform.eu.rep.googleapis.com|europe-west4-aiplatform.googleapis.com).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "UNBEKANNT — pruefen (Ziel: leer)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Ausgehende Verbindungen zu oeffentlichen IPs. Faengt auch Ziele ohne DNS (hardcodierte IPs).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (id_resp_h) (count_over_time({job=\"zeek\", log_type=\"conn\"} | json | __error__=\"\" | id_resp_h!~\"^(10[.]|172[.](1[6-9]|2[0-9]|3[01])[.]|192[.]168[.]|127[.]|169[.]254[.]).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Externe Ziel-IPs (conn) — ohne interne Netze",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Live-Feed: Domain  <-  anfragender Host.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"zeek\", log_type=\"dns\"} | json | line_format \"{{.query}}  <-  {{.id_orig_h}}\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "DNS-Aufloesungen (roh, live)",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Welches System (private Quell-IP, vor NAT) spricht welche externe IP an. Setzt ZEEK_IFACE=any voraus (Mitschnitt auf den Docker-Bridges). IP->Name siehe System-Legende (0_SYSTEM-LEGENDE.csv).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (id_orig_h, id_resp_h) (count_over_time({job=\"zeek\", log_type=\"conn\"} | json | __error__=\"\" | id_orig_h=~\"^(10[.]|172[.](1[6-9]|2[0-9]|3[01])[.]|192[.]168[.]|127[.]|169[.]254[.]).*\" | id_resp_h!~\"^(10[.]|172[.](1[6-9]|2[0-9]|3[01])[.]|192[.]168[.]|127[.]|169[.]254[.]).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Quelle -> Ziel (System x externe IP)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Anzahl externer Verbindungen je Container. Schneller Ueberblick, welche Systeme ueberhaupt nach aussen telefonieren. Setzt ZEEK_IFACE=any voraus.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (id_orig_h) (count_over_time({job=\"zeek\", log_type=\"conn\"} | json | __error__=\"\" | id_orig_h=~\"^(10[.]|172[.](1[6-9]|2[0-9]|3[01])[.]|192[.]168[.]).*\" | id_resp_h!~\"^(10[.]|172[.](1[6-9]|2[0-9]|3[01])[.]|192[.]168[.]|127[.]|169[.]254[.]).*\" [$__range]))",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Egress-Volumen je System (Quelle)",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "30s",
+  "schemaVersion": 40,
+  "tags": [
+    "dsgvo",
+    "egress",
+    "zeek"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Datenabfluss / DSGVO-Egress",
+  "uid": "datenabfluss-egress",
+  "version": 38,
+  "weekStart": ""
+}
