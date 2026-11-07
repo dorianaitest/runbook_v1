@@ -678,6 +678,26 @@ endpoints:
         gemini-2.5-pro: { prompt: 1.25, completion: 10.00, context: 1000000 }
         gemini-2.5-flash: { prompt: 0.30, completion: 2.50, context: 1000000 }
         gemini-3.5-flash: { prompt: 1.50, completion: 9.00, context: 1000000 }
+    # EU-AI-Act-Einordnungs-Agent (PydanticAI). Das Modell 'aiact-einordnung'
+    # wird im FastAPI-Gateway abgefangen und lokal beantwortet, nicht an LiteLLM
+    # weitergereicht. titleModel bleibt ein normales Modell, damit die
+    # Titelgenerierung ueber den ueblichen Proxy laeuft.
+    - name: 'Compliance'
+      apiKey: 'sk-librechat-admin'
+      baseURL: 'http://fastapi-gateway:8001/v1'
+      headers:
+        X-LibreChat-User-Id: "{{LIBRECHAT_USER_ID}}"
+      models:
+        default:
+          - 'aiact-einordnung'
+        fetch: false
+      titleConvo: true
+      titleModel: 'gpt-4.1-mini'
+      modelDisplayLabel: 'EU AI Act'
+      tokenConfig:
+        # Backend ist claude-sonnet-4-6 -> gleicher Tarif wie die Claude-Gruppe,
+        # damit der reale Verbrauch pro Nutzer korrekt vom Guthaben abgeht.
+        aiact-einordnung: { prompt: 3.30, completion: 16.50, context: 200000 }
     # OpenRouter Example
 #     - name: 'OpenRouter'
 #       # For `apiKey` and `baseURL`, you can use environment variables that you define.
@@ -980,6 +1000,25 @@ modelSpecs:
         endpointType: "custom"
         model: "gemini-3.5-flash"
         maxContextTokens: 1000000
+    - name: "aiact-einordnung"
+      label: "EU AI Act Einordnung"
+      description: '<span class="usage-desc"><span class="i18n-de">KI-Anwendungsfall nach EU AI Act einordnen</span><span class="i18n-en">Classify a use case under the EU AI Act</span></span>'
+      group: "Compliance"
+      hideBadgeRow: true
+      webSearch: false
+      executeCode: false
+      fileSearch: false
+      artifacts: false
+      preset:
+        endpoint: "Compliance"
+        endpointType: "custom"
+        model: "aiact-einordnung"
+        maxContextTokens: 32000
+        greeting: >-
+          Beschreibe deinen geplanten oder bestehenden KI-Anwendungsfall
+          (Zweck, verarbeitete Daten, betroffene Personen, Einsatzkontext).
+          Ich liefere dir eine strukturierte Ersteinschätzung nach EU AI Act –
+          keine Rechtsberatung.
     - name: "bild-gpt"
       label: "GPT Image 2"
       description: '<span class="usage-desc"><span class="i18n-de">Detailreiche Bilder und Grafiken</span><span class="i18n-en">Detailed images and graphics</span><br><span class="usage-wrap"><span class="usage-track usage-4"></span></span></span>'

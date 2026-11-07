@@ -12,11 +12,17 @@ from vault import load_secrets
 from database import log_request, init_db
 from agent import classify_ticket
 from auth import check_key
+from aiact_agent import einordnen, format_markdown
+from aiact_rag import request_key
 
 LITELLM_BASE_URL = "http://litellm:4000"
 PII_GATE_URL = "http://pii-gate:8000"
 
 BUDGET_LIMIT_MESSAGE = "You have reached your AI-Test limit"
+
+# Modellname, unter dem der EU-AI-Act-Einordnungs-Agent in LibreChat erscheint.
+# Wird im Proxy abgefangen und lokal beantwortet statt an LiteLLM zu gehen.
+AIACT_MODEL = "aiact-einordnung"
 
 structlog.configure(
     processors=[
@@ -69,6 +75,157 @@ def budget_stream_response(model):
         last = dict(base)
         last["choices"] = [{"index": 0, "delta": {}, "finish_reason": "stop"}]
         yield f"data: {json.dumps(last)}\n\n".encode()
+        yield b"data: [DONE]\n\n"
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _extract_last_user_text(messages: list) -> str:
+    """Holt den Text der letzten User-Nachricht; unterstuetzt sowohl reine
+    Strings als auch das OpenAI-Parts-Format (Liste von {type,text})."""
+    for msg in reversed(messages or []):
+        if msg.get("role") != "user":
+            continue
+        content = msg.get("content")
+        if isinstance(content, str):
+            return content.strip()
+        if isinstance(content, list):
+            parts = [
+                p.get("text", "")
+                for p in content
+                if isinstance(p, dict) and p.get("type") == "text"
+            ]
+            return "\n".join(parts).strip()
+    return ""
+
+
+def aiact_completion_response(model, content, prompt_tokens=0, completion_tokens=0):
+    return JSONResponse(
+        content={
+            "id": "aiact-einordnung",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": content},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+        }
+    )
+
+
+def aiact_stream_response(model, content):
+    base = {
+        "id": "aiact-einordnung",
+        "object": "chat.completion.chunk",
+        "created": int(time.time()),
+        "model": model,
+    }
+
+    async def gen():
+        first = dict(base)
+        first["choices"] = [{"index": 0, "delta": {"role": "assistant", "content": content}, "finish_reason": None}]
+        yield f"data: {json.dumps(first)}\n\n".encode()
+        last = dict(base)
+        last["choices"] = [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+        yield f"data: {json.dumps(last)}\n\n".encode()
+        yield b"data: [DONE]\n\n"
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+async def _run_einordnung(messages: list) -> tuple[str, int, int]:
+    """Gibt (Markdown, prompt_tokens, completion_tokens) zurueck. Die Token
+    stammen aus den internen Modell-Runden des Agenten und dienen dem
+    Guthaben-Abzug pro Nutzer in LibreChat."""
+    try:
+        output, (pt, ct) = await einordnen(messages)
+        content = format_markdown(output)
+        asyncio.create_task(log_request(AIACT_MODEL, pt, ct, 200, 0))
+        return content, pt, ct
+    except Exception as e:
+        logger.error("aiact_failed", error=str(e))
+        return "Die Einordnung konnte gerade nicht erstellt werden. Bitte versuche es erneut.", 0, 0
+
+
+def _auth_key(auth_header: str | None) -> str | None:
+    if auth_header and auth_header.lower().startswith("bearer "):
+        return auth_header.split(" ", 1)[1].strip()
+    return None
+
+
+async def handle_aiact_request(req_json: dict, is_stream: bool, auth_header: str | None):
+    """Beantwortet eine chat/completions-Anfrage mit model=AIACT_MODEL ueber den
+    PydanticAI-Einordnungs-Agenten statt ueber LiteLLM."""
+    key = _auth_key(auth_header)
+    model = req_json.get("model", AIACT_MODEL)
+    messages = req_json.get("messages", [])
+
+    if not _extract_last_user_text(messages):
+        hint = (
+            "Bitte beschreibe den geplanten KI-Anwendungsfall in einem Satz oder "
+            "mehr (Zweck, verarbeitete Daten, betroffene Personen, Einsatzkontext). "
+            "Dann liefere ich eine strukturierte EU-AI-Act-Einordnung."
+        )
+        return aiact_stream_response(model, hint) if is_stream else aiact_completion_response(model, hint)
+
+    if not is_stream:
+        if key:
+            request_key.set(key)
+        content, pt, ct = await _run_einordnung(messages)
+        return aiact_completion_response(model, content, pt, ct)
+
+    # Streaming: Stream SOFORT oeffnen (Assistant-Bubble erscheint, die
+    # User-Nachricht bleibt sichtbar), waehrend der Agent laeuft Keep-alives
+    # senden, am Ende das Ergebnis als einen Delta-Chunk streamen.
+    base = {"id": "aiact-einordnung", "object": "chat.completion.chunk",
+            "created": int(time.time()), "model": model}
+
+    async def gen():
+        if key:
+            request_key.set(key)  # Contextvar im Generator-Kontext setzen
+        first = dict(base)
+        first["choices"] = [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}]
+        yield f"data: {json.dumps(first)}\n\n".encode()
+
+        task = asyncio.create_task(_run_einordnung(messages))
+        while not task.done():
+            yield b": keep-alive\n\n"
+            await asyncio.wait({task}, timeout=5)
+        content, pt, ct = task.result()
+
+        mid = dict(base)
+        mid["choices"] = [{"index": 0, "delta": {"content": content}, "finish_reason": None}]
+        yield f"data: {json.dumps(mid)}\n\n".encode()
+        last = dict(base)
+        last["choices"] = [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+        yield f"data: {json.dumps(last)}\n\n".encode()
+        # Abschluss-Chunk mit echter Usage (OpenAI include_usage-Konvention):
+        # LibreChat zieht damit das Guthaben des Nutzers ab.
+        usage = dict(base)
+        usage["choices"] = []
+        usage["usage"] = {
+            "prompt_tokens": pt,
+            "completion_tokens": ct,
+            "total_tokens": pt + ct,
+        }
+        yield f"data: {json.dumps(usage)}\n\n".encode()
         yield b"data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -166,13 +323,16 @@ async def proxy(request: Request, path: str):
 
     is_stream = False
     model = "unknown"
+    is_aiact = False
+    req_json = None
     if request.method == "POST" and body:
         try:
             req_json = json.loads(body)
             is_stream = req_json.get("stream", False)
             model = req_json.get("model", "unknown")
             uid = request.headers.get("x-librechat-user-id")
-            if uid and "chat/completions" in path:
+            is_aiact = model == AIACT_MODEL and "chat/completions" in path
+            if not is_aiact and uid and "chat/completions" in path:
                 req_json["user"] = uid
                 msgs = req_json.get("messages")
                 if isinstance(msgs, list):
@@ -182,6 +342,12 @@ async def proxy(request: Request, path: str):
                 headers.pop("content-length", None)
         except Exception:
             pass
+
+    if is_aiact and req_json is not None:
+        msgs = req_json.get("messages")
+        if isinstance(msgs, list):
+            await shadow_scrub_messages(msgs)
+        return await handle_aiact_request(req_json, is_stream, request.headers.get("authorization"))
 
     if is_stream:
         client = httpx.AsyncClient(timeout=120.0)
