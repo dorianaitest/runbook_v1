@@ -668,6 +668,17 @@ endpoints:
         gemini-2.5-pro: { prompt: 1.25, completion: 10.00, context: 1000000 }
         gemini-2.5-flash: { prompt: 0.30, completion: 2.50, context: 1000000 }
         gemini-3.5-flash: { prompt: 1.50, completion: 9.00, context: 1000000 }
+    # Citations spike: dummy RAG backend (apps/rag-stub), canned answers, no LLM.
+    # Admin-defined baseURL, so no allowedAddresses entry needed (same as fastapi-gateway).
+    - name: 'RAG-Demo'
+      apiKey: 'dummy'
+      baseURL: 'http://rag-stub:8000/v1'
+      models:
+        default:
+          - 'rag-demo'
+        fetch: false
+      titleConvo: false
+      modelDisplayLabel: 'RAG-Demo'
     # OpenRouter Example
 #     - name: 'OpenRouter'
 #       # For `apiKey` and `baseURL`, you can use environment variables that you define.
