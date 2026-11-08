@@ -1194,8 +1194,9 @@ memory:
   personalize: true
   agent:
     enabled: true
-    provider: "OpenAI"
-    model: "gpt-4.1-mini"
+    # Custom endpoint name: fastapi-gateway -> LiteLLM -> Vertex AI (free credits there).
+    provider: "Gemini"
+    model: "gemini-2.5-flash"
     instructions: "You are a memory management assistant. Store and manage user information accurately."
     model_parameters:
       temperature: 0.1
