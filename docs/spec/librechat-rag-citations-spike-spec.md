@@ -55,7 +55,7 @@ The viewer page highlights the section named in the URL fragment (`:target` CSS 
 
 ## Assumptions
 
-- `runbook_v1` deploys to the VPS behind `chat.demo-ki-instanz.de`, via commit, push and `git pull` in `/srv`.
+- `runbook_v1` deploys to the VPS behind `chat.demo-ki-instanz.de`, via commit, push and `git pull` in `/srv/runbook_v1` (`/srv/apps` and `/srv/overrides` are symlinks into it).
 - The VPN that protects LibreChat also covers `rag-stub.demo-ki-instanz.de`, so the viewer pages are reachable wherever the chat is.
 - The `letsencrypt-dns` cert resolver can issue a certificate for `rag-stub.demo-ki-instanz.de`.
 - The viewer is a plain HTML page; mimicking the demo's panel styling is out of scope.
@@ -124,6 +124,23 @@ What to do: add under `endpoints.custom` in `overrides/librechat/librechat.yaml`
 
 Check whether `rag-stub` must be added to `allowedAddresses` (the yaml's SSRF exemption list, see the comments near line 295) for an admin-defined `baseURL`; the existing `fastapi-gateway` endpoints are the reference.
 
+Result: not needed. The SSRF check only applies to user-provided baseURLs, and the `fastapi-gateway` endpoints work without an entry.
+
+Because `interface.modelSelect` is `false`, the picker shows only `modelSpecs` entries, so the endpoint also needs a spec (added after the first deploy, when RAG-Demo did not show up):
+
+```yaml
+    - name: "rag-demo"
+      label: "RAG-Demo"
+      group: "RAG-Demo"
+      hideBadgeRow: true
+      preset:
+        endpoint: "RAG-Demo"
+        endpointType: "custom"
+        model: "rag-demo"
+```
+
+It deliberately omits `<<: *specDefaults`, which would turn on web search, code execution, file search and artifacts and add tools to the requests the spike observes.
+
 Acceptance check:
 ```bash
 uv run --with pyyaml python -c "import yaml; c=yaml.safe_load(open('overrides/librechat/librechat.yaml')); print([e['name'] for e in c['endpoints']['custom']])"
@@ -133,18 +150,31 @@ uv run --with pyyaml python -c "import yaml; c=yaml.safe_load(open('overrides/li
 
 What to do: commit Steps 1 to 3 on the branch and push; the user pulls and deploys.
 
+Before the first deploy, the user adds a DNS `A` record `rag-stub` (same IP as `chat`) in the Hetzner Console zone `demo-ki-instanz.de`.
+
 Acceptance check (user, on the VPS):
 ```bash
-cd /srv && git fetch && git switch feat/rag-stub-citations-spike && git pull
+# /srv itself is not a git checkout; /srv/apps and /srv/overrides are symlinks into /srv/runbook_v1.
+cd /srv/runbook_v1 && git fetch && git switch feat/rag-stub-citations-spike && git pull
+docker compose -f apps/rag-stub/docker-compose.yml config -q && echo "compose ok"
 docker compose -f apps/rag-stub/docker-compose.yml up -d --build
 curl -s https://rag-stub.demo-ki-instanz.de/healthz
 # Recreate (not restart) the api container: git pull replaces librechat.yaml with a new
 # inode, and a single-file bind mount keeps the old one until the container is recreated.
-cd /srv/apps/librechat && bash -c 'set -a && source .env && set +a && source /srv/load-secrets.sh && docker compose up -d --force-recreate api'
-docker logs LibreChat 2>&1 | tail -50 | rg -i "error|invalid" || echo "no config errors"
+cd /srv/apps/librechat && bash -e -c '
+  set -a
+  source <(sed "/^[[:space:]]*UID=/d" .env)
+  source /srv/runbook_v1/load-secrets.sh
+  set +a
+  docker compose --env-file .env \
+    -f docker-compose.yml \
+    -f /srv/overrides/librechat/docker-compose.override.yml \
+    up -d --force-recreate api
+'
+docker logs LibreChat 2>&1 | tail -50 | grep -iE "error|invalid|memory" || echo "no config errors"
 ```
 
-The `set -a && source .env` line follows the usage note in `load-secrets.sh`; adjust if the VPS uses a different wrapper for LibreChat.
+The wrapper is the one the VPS already uses for LibreChat (taken from the shell history), and `rg` is not installed on the VPS, so the commands use `grep`.
 
 ### Step 5 - E2E check (user, locally on the VPN)
 
@@ -161,6 +191,7 @@ The script logs in, opens a new chat with `RAG-Demo`, and:
 Acceptance check (user, locally):
 ```bash
 cd apps/rag-stub/e2e
+npm install
 LIBRECHAT_URL=https://chat.demo-ki-instanz.de \
 LIBRECHAT_EMAIL='<test account>' LIBRECHAT_PASSWORD='<password>' \
 CHROME_PATH=~/.cache/ms-playwright/chromium-1247/chrome-linux64/chrome \
@@ -169,7 +200,7 @@ node check.mjs; echo "exit $?"
 
 Then on the VPS, to read what LibreChat sent:
 ```bash
-docker logs rag-stub 2>&1 | rg 'request'
+docker logs rag-stub 2>&1 | grep '"event": "request"'
 ```
 
 A manual fallback checklist (same steps by hand) goes into `apps/rag-stub/README.md`, in case the script fails for reasons unrelated to LibreChat (login flow, selectors).
@@ -178,6 +209,7 @@ A manual fallback checklist (same steps by hand) goes into `apps/rag-stub/README
 
 What to do: record per-check pass/fail, the screenshots and the request-log findings (is full history sent, are title or model-list calls made, is `stream` always true) in a "Results" section of this spec.
 Then decide with the user: keep the stub for the real RAG, or remove the endpoint and stop the container.
+Removal covers the `RAG-Demo` endpoint and the `rag-demo` model spec in `librechat.yaml`, the container, and the `rag-stub` DNS record.
 
 Acceptance check (cleanup case, user, on the VPS):
 ```bash
