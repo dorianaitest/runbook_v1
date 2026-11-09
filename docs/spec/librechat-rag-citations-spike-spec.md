@@ -204,3 +204,51 @@ curl -s -o /dev/null -w '%{http_code}\n' https://rag-stub.demo-ki-instanz.de/hea
 - After Step 3: the user reviews the diff, then Claude commits and pushes the branch.
 - After Step 4: the user confirms the stub is live and LibreChat restarted cleanly.
 - After Step 5: the user reports the checklist results and pastes the request log; together we decide how the real integration handles history and titles.
+
+## Results
+
+**Date:** 2026-11-09
+
+**Outcome:** the spike passed.
+LibreChat keeps Markdown citation links intact, so the real RAG only has to produce the same answer format.
+
+### Manual check (Step 5)
+
+All checklist items passed (user, in the browser on the VPN):
+
+- The answer streams, with heading, "Maßnahmen", "Ähnlicher Servicefall" and "Quellen".
+- Markers `[1]` to `[5]` and all Quellen entries are clickable links.
+- Clicking `[2]` opens `/source/BA-M200-DE#s-7.3.1` in a new tab, with 7.3.1 highlighted.
+- The off-topic question abstains with `UNZUREICHENDE BELEGE:` and no links.
+- The follow-up in the same chat gets the cited answer again.
+- After a reload, the links in the saved chat still work.
+
+Screenshots were taken by the user and are not in the repo.
+
+### Request log findings
+
+Six requests over two chats (one earlier manual test, one checklist run):
+
+| # | stream | message_count | roles |
+| --- | --- | --- | --- |
+| 1 | false | 1 | user |
+| 2 | true | 2 | system, user |
+| 3 | false | 1 | user |
+| 4 | true | 2 | system, user |
+| 5 | true | 4 | system, user, assistant, user |
+| 6 | true | 6 | system, user, assistant, user, assistant, user |
+
+Every request had exactly the fields `messages`, `model`, `stream`, `user`.
+
+- **Full history is sent on every turn** (2, 4, 6 messages). The real RAG can stay stateless; it should retrieve on the last user message and may use the history to resolve follow-ups like "und bei E-214?".
+- **Chat turns always stream** (`stream: true`).
+- **One extra non-streamed call per new chat**, with a single user message, only before the first turn and never on follow-ups. This pattern matches LibreChat's title generation, even though `titleConvo: false` is set; not confirmed, because the stub does not log content. Check: if the sidebar title of a RAG-Demo chat looks like the start of the canned answer, it is the title call. The real RAG must answer it cheaply (or the call must be stopped), so it does not run a full retrieval per new chat.
+- **LibreChat always prepends a system message** on chat turns, although the `rag-demo` spec sets no `promptPrefix`. Its content is unknown (likely LibreChat's own instructions or injected memory). The real RAG should accept it and must not rely on being the only one that sets the system prompt.
+- **The `user` field is set** on every request (LibreChat's user id). The real RAG can use it for per-user audit logging; it is a pseudonymous identifier, so it falls under the DSGVO logging rules.
+- **No model-list calls and no extra parameters** (no `temperature`, `max_tokens`, `tools`), as expected with `fetch: false` and no `specDefaults`.
+
+### Open items
+
+- Confirm the non-streamed call is the title call (sidebar title check), and decide whether the real RAG handles or blocks it.
+- Memory agent on `gemini-2.5-flash`: confirm in Langfuse or `docker logs LibreChat` that memory calls work.
+- Keep or remove the stub, then switch `/srv/runbook_v1` back to `main` or merge the branch.
