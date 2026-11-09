@@ -24,7 +24,7 @@ Once the spike passes, the real RAG only has to produce the same answer format.
 - **`apps/rag-stub/`** (new) - FastAPI app: `/v1/chat/completions` (stream and non-stream) with canned answers, `/source/<id>` viewer pages, `/healthz`, and a request log with structure only (roles, message count, set fields), never message content.
 - **`apps/rag-stub/docker-compose.yml`** (new) - container on `app_net` (LibreChat reaches it at `http://rag-stub:8000`) and `proxy` (Traefik route for the viewer pages).
 - **`overrides/librechat/librechat.yaml`** - one new entry under `endpoints.custom`: `RAG-Demo`.
-- **`apps/rag-stub/e2e/check.mjs`** (new) - Playwright script that the user runs locally, because LibreChat is behind a VPN that does not work together with Claude Code.
+- **`apps/rag-stub/README.md`** (new) - manual checklist that the user runs in the browser, because LibreChat is behind a VPN that does not work together with Claude Code.
 - **Traefik** - picks up the stub via container labels only; no changes to `infra/traefik/`.
 
 ## Dummy content
@@ -60,7 +60,7 @@ The viewer page highlights the section named in the URL fragment (`:target` CSS 
 - The `letsencrypt-dns` cert resolver can issue a certificate for `rag-stub.demo-ki-instanz.de`.
 - The viewer is a plain HTML page; mimicking the demo's panel styling is out of scope.
 - It is acceptable that every LibreChat user briefly sees the `RAG-Demo` endpoint, and that LibreChat restarts once to load the yaml change.
-- The user creates a LibreChat test account and passes its credentials to the E2E script via environment variables; they never go into the repo.
+- The user runs the Step 5 check by hand with their own LibreChat account.
 
 ## Risks
 
@@ -176,34 +176,15 @@ docker logs LibreChat 2>&1 | tail -50 | grep -iE "error|invalid|memory" || echo 
 
 The wrapper is the one the VPS already uses for LibreChat (taken from the shell history), and `rg` is not installed on the VPS, so the commands use `grep`.
 
-### Step 5 - E2E check (user, locally on the VPN)
+### Step 5 - Manual check (user, in the browser on the VPN)
 
-What to do: Claude writes `apps/rag-stub/e2e/check.mjs` and the run instructions; the user runs it locally while connected to the VPN.
-The script logs in, opens a new chat with `RAG-Demo`, and:
+What to do: the user runs the manual checklist in `apps/rag-stub/README.md` in LibreChat (an automated Playwright script was dropped in favor of the manual check).
+In short: a new `RAG-Demo` chat, the E-214 question with citations `[1]` to `[5]`, a click on `[2]` that opens `/source/BA-M200-DE#s-7.3.1` highlighted in a new tab, an off-topic question that abstains, and a follow-up in the same chat.
 
-1. asks `SN 20-4471 steht mit E-214. Was bedeutet das und was ist zu tun?` and waits until streaming ends;
-2. asserts the answer contains links to `/source/` with the expected numbers 1 to 5;
-3. clicks citation 2 and asserts the new tab URL ends in `/source/BA-M200-DE#s-7.3.1` and section 7.3.1 is highlighted;
-4. asks an off-topic question and asserts the answer contains `UNZUREICHENDE BELEGE`;
-5. sends a follow-up in the same chat;
-6. saves a screenshot per step and exits 0 only if every assertion passed.
-
-Acceptance check (user, locally):
-```bash
-cd apps/rag-stub/e2e
-npm install
-LIBRECHAT_URL=https://chat.demo-ki-instanz.de \
-LIBRECHAT_EMAIL='<test account>' LIBRECHAT_PASSWORD='<password>' \
-CHROME_PATH=~/.cache/ms-playwright/chromium-1247/chrome-linux64/chrome \
-node check.mjs; echo "exit $?"
-```
-
-Then on the VPS, to read what LibreChat sent:
+Acceptance check: every checklist item passes, plus the request log on the VPS:
 ```bash
 docker logs rag-stub 2>&1 | grep '"event": "request"'
 ```
-
-A manual fallback checklist (same steps by hand) goes into `apps/rag-stub/README.md`, in case the script fails for reasons unrelated to LibreChat (login flow, selectors).
 
 ### Step 6 - Results and cleanup
 
@@ -222,4 +203,4 @@ curl -s -o /dev/null -w '%{http_code}\n' https://rag-stub.demo-ki-instanz.de/hea
 - After Step 1: the user reviews the answer text and how the citations look in the curl output before anything is committed for deployment.
 - After Step 3: the user reviews the diff, then Claude commits and pushes the branch.
 - After Step 4: the user confirms the stub is live and LibreChat restarted cleanly.
-- After Step 5: the user pastes the script output and request log; together we decide how the real integration handles history and titles.
+- After Step 5: the user reports the checklist results and pastes the request log; together we decide how the real integration handles history and titles.

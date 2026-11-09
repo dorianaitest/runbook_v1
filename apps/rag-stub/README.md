@@ -31,28 +31,7 @@ docker logs rag-stub 2>&1 | grep '"event": "request"'
 
 LibreChat picks up `librechat.yaml` changes only after its `api` container is recreated, see the spec's Step 4.
 
-## E2E check (locally, on the VPN)
-
-Needs Node and the Playwright Chromium in `~/.cache/ms-playwright`.
-
-```bash
-cd apps/rag-stub/e2e
-npm install
-LIBRECHAT_URL=https://chat.demo-ki-instanz.de \
-LIBRECHAT_EMAIL='<test account>' LIBRECHAT_PASSWORD='<password>' \
-CHROME_PATH=~/.cache/ms-playwright/chromium-1247/chrome-linux64/chrome \
-node check.mjs; echo "exit $?"
-```
-
-Set `HEADLESS=0` to watch the browser.
-Each check prints `PASS` or `FAIL`, screenshots land in `e2e/screenshots/`, and the exit code is 0 only if all checks passed.
-Exit code 2 means the credentials are missing.
-
-Credentials only go into environment variables, never into the repo.
-
-## Manual fallback checklist
-
-Use this if the script fails for reasons unrelated to the spike, such as the login flow or changed selectors.
+## Manual check (in the browser, on the VPN)
 
 1. Log in to LibreChat and start a new chat with **RAG-Demo** from the model picker.
 2. Ask `SN 20-4471 steht mit E-214. Was bedeutet das und was ist zu tun?` and wait for streaming to finish.
