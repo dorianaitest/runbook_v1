@@ -981,6 +981,17 @@ modelSpecs:
         endpointType: "custom"
         model: "gemini-3.5-flash"
         maxContextTokens: 1000000
+    # Citations spike (apps/rag-stub): modelSelect is false, so the endpoint needs a spec
+    # to show up. No specDefaults: the stub ignores tools, keep the request plain.
+    - name: "rag-demo"
+      label: "RAG-Demo"
+      description: "Citations spike: canned answers, fictional documents"
+      group: "RAG-Demo"
+      hideBadgeRow: true
+      preset:
+        endpoint: "RAG-Demo"
+        endpointType: "custom"
+        model: "rag-demo"
     - name: "bild-gpt"
       label: "GPT Image 2"
       description: '<span class="usage-desc"><span class="i18n-de">Detailreiche Bilder und Grafiken</span><span class="i18n-en">Detailed images and graphics</span><br><span class="usage-wrap"><span class="usage-track usage-4"></span></span></span>'
