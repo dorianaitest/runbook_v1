@@ -1,0 +1,54 @@
+# voron-rag: real RAG backend for the "Voron RAG" LibreChat endpoint (replaces apps/rag-stub).
+# Code copied from tech-rag-agent; spec: docs/spec/voron-rag-vps-deploy-spec.md there.
+# Usage:
+#   docker compose -f /srv/apps/voron-rag/docker-compose.yml up -d --build
+#
+# Secrets in apps/voron-rag/.env (never committed): OPENAI_API_KEY, VORON_RAG_API_KEY.
+# LibreChat calls it internally at http://voron-rag:8765/v1 over app_net.
+# Traefik exposes it only so the citation links (/source/<doc>) open in the browser;
+# it reuses the spike's hostname rag-stub.demo-ki-instanz.de (DNS record and certificate exist).
+
+services:
+  voron-rag:
+    build: .
+    container_name: voron-rag
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PUBLIC_BASE_URL=https://rag-stub.demo-ki-instanz.de
+    expose:
+      - "8765"
+    volumes:
+      # Downloaded docs, Qdrant index and the BM25 model survive rebuilds.
+      - docs:/app/data/raw/docs
+      - index:/app/data/index
+    networks:
+      - app_net
+      - proxy
+    healthcheck:
+      # Port check only: every API route needs the bearer key.
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8765), 2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      # First start downloads docs and the BM25 model and builds the index.
+      start_period: 300s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.voron-rag.rule=Host(`rag-stub.demo-ki-instanz.de`)"
+      - "traefik.http.routers.voron-rag.entrypoints=websecure"
+      - "traefik.http.routers.voron-rag.tls=true"
+      - "traefik.http.routers.voron-rag.tls.certresolver=letsencrypt-dns"
+      - "traefik.http.routers.voron-rag.middlewares=frame-deny@file"
+      - "traefik.http.services.voron-rag.loadbalancer.server.port=8765"
+
+volumes:
+  docs:
+  index:
+
+networks:
+  app_net:
+    external: true
+  proxy:
+    external: true

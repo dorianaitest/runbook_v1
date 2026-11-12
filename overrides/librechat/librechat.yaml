@@ -698,6 +698,19 @@ endpoints:
         # Backend ist claude-sonnet-4-6 -> gleicher Tarif wie die Claude-Gruppe,
         # damit der reale Verbrauch pro Nutzer korrekt vom Guthaben abgeht.
         aiact-einordnung: { prompt: 3.30, completion: 16.50, context: 200000 }
+    # Voron 2.4 troubleshooting RAG (apps/voron-rag), one RAG call per message, OpenAI key capped at 2€.
+    # Admin-defined baseURL, so no allowedAddresses entry needed (same as fastapi-gateway).
+    # VORON_RAG_API_KEY must match apps/voron-rag/.env.
+    - name: 'Voron RAG'
+      apiKey: '${VORON_RAG_API_KEY}'
+      baseURL: 'http://voron-rag:8765/v1'
+      models:
+        default:
+          - 'voron-rag-v2'
+        fetch: false
+      # Titles would cost a full RAG call per new chat.
+      titleConvo: false
+      modelDisplayLabel: 'Voron RAG'
     # OpenRouter Example
 #     - name: 'OpenRouter'
 #       # For `apiKey` and `baseURL`, you can use environment variables that you define.
@@ -1019,6 +1032,17 @@ modelSpecs:
           (Zweck, verarbeitete Daten, betroffene Personen, Einsatzkontext).
           Ich liefere dir eine strukturierte Ersteinschätzung nach EU AI Act –
           keine Rechtsberatung.
+    # Voron RAG (apps/voron-rag): modelSelect is false, so the endpoint needs a spec
+    # to show up. No specDefaults: voron-rag ignores tools, keep the request plain.
+    - name: "voron-rag"
+      label: "Voron RAG"
+      description: "Voron 2.4 troubleshooting from official docs and community cases, with citations"
+      group: "Voron RAG"
+      hideBadgeRow: true
+      preset:
+        endpoint: "Voron RAG"
+        endpointType: "custom"
+        model: "voron-rag-v2"
     - name: "bild-gpt"
       label: "GPT Image 2"
       description: '<span class="usage-desc"><span class="i18n-de">Detailreiche Bilder und Grafiken</span><span class="i18n-en">Detailed images and graphics</span><br><span class="usage-wrap"><span class="usage-track usage-4"></span></span></span>'
@@ -1232,8 +1256,9 @@ memory:
   personalize: true
   agent:
     enabled: true
-    provider: "OpenAI"
-    model: "gpt-4.1-mini"
+    # Custom endpoint name: fastapi-gateway -> LiteLLM -> Vertex AI (free credits there).
+    provider: "Gemini"
+    model: "gemini-2.5-flash"
     instructions: "You are a memory management assistant. Store and manage user information accurately."
     model_parameters:
       temperature: 0.1
