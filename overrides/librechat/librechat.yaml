@@ -668,17 +668,19 @@ endpoints:
         gemini-2.5-pro: { prompt: 1.25, completion: 10.00, context: 1000000 }
         gemini-2.5-flash: { prompt: 0.30, completion: 2.50, context: 1000000 }
         gemini-3.5-flash: { prompt: 1.50, completion: 9.00, context: 1000000 }
-    # Citations spike: dummy RAG backend (apps/rag-stub), canned answers, no LLM.
+    # Voron 2.4 troubleshooting RAG (apps/voron-rag), one RAG call per message, OpenAI key capped at 2€.
     # Admin-defined baseURL, so no allowedAddresses entry needed (same as fastapi-gateway).
-    - name: 'RAG-Demo'
-      apiKey: 'dummy'
-      baseURL: 'http://rag-stub:8000/v1'
+    # VORON_RAG_API_KEY must match apps/voron-rag/.env.
+    - name: 'Voron RAG'
+      apiKey: '${VORON_RAG_API_KEY}'
+      baseURL: 'http://voron-rag:8765/v1'
       models:
         default:
-          - 'rag-demo'
+          - 'voron-rag-v2'
         fetch: false
+      # Titles would cost a full RAG call per new chat.
       titleConvo: false
-      modelDisplayLabel: 'RAG-Demo'
+      modelDisplayLabel: 'Voron RAG'
     # OpenRouter Example
 #     - name: 'OpenRouter'
 #       # For `apiKey` and `baseURL`, you can use environment variables that you define.
@@ -981,17 +983,17 @@ modelSpecs:
         endpointType: "custom"
         model: "gemini-3.5-flash"
         maxContextTokens: 1000000
-    # Citations spike (apps/rag-stub): modelSelect is false, so the endpoint needs a spec
-    # to show up. No specDefaults: the stub ignores tools, keep the request plain.
-    - name: "rag-demo"
-      label: "RAG-Demo"
-      description: "Citations spike: canned answers, fictional documents"
-      group: "RAG-Demo"
+    # Voron RAG (apps/voron-rag): modelSelect is false, so the endpoint needs a spec
+    # to show up. No specDefaults: voron-rag ignores tools, keep the request plain.
+    - name: "voron-rag"
+      label: "Voron RAG"
+      description: "Voron 2.4 troubleshooting from official docs and community cases, with citations"
+      group: "Voron RAG"
       hideBadgeRow: true
       preset:
-        endpoint: "RAG-Demo"
+        endpoint: "Voron RAG"
         endpointType: "custom"
-        model: "rag-demo"
+        model: "voron-rag-v2"
     - name: "bild-gpt"
       label: "GPT Image 2"
       description: '<span class="usage-desc"><span class="i18n-de">Detailreiche Bilder und Grafiken</span><span class="i18n-en">Detailed images and graphics</span><br><span class="usage-wrap"><span class="usage-track usage-4"></span></span></span>'
