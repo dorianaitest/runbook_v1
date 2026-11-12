@@ -4,7 +4,7 @@
 
 **Date:** 2026-11-08
 
-**Status:** draft
+**Status:** done, stub replaced by voron-rag on 2026-11-12
 
 **Branch:** `feat/rag-stub-citations-spike`
 
@@ -251,4 +251,11 @@ Every request had exactly the fields `messages`, `model`, `stream`, `user`.
 
 - Confirm the non-streamed call is the title call (sidebar title check), and decide whether the real RAG handles or blocks it.
 - Memory agent on `gemini-2.5-flash`: confirm in Langfuse or `docker logs LibreChat` that memory calls work.
-- Keep or remove the stub, then switch `/srv/runbook_v1` back to `main` or merge the branch.
+- Switch `/srv/runbook_v1` back to `main` or merge the branch.
+
+## Replaced by voron-rag (2026-11-12)
+
+The stub is removed; `apps/voron-rag/` (the real Voron 2.4 RAG, copied from the tech-rag-agent project) now serves the same answer format.
+It reuses the hostname `rag-stub.demo-ki-instanz.de` for the citation viewer, so no new DNS record or certificate was needed.
+LibreChat shows it as "Voron RAG" (endpoint `http://voron-rag:8765/v1`, model `voron-rag-v2`); RAG-Demo is gone.
+Spec: `docs/spec/voron-rag-vps-deploy-spec.md` in the tech-rag-agent repo.
